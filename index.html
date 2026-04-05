@@ -290,6 +290,7 @@ text-transform:uppercase;vertical-align:middle;margin-left:4px;
 .region-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
 
 .highlights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem}
+.highlights-grid.four-col{grid-template-columns:repeat(4,1fr)}
 .hl-panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:1.5rem}
 .hl-panel h4{font-size:0.7rem;letter-spacing:0.2em;color:var(--amber);margin-bottom:1rem}
 .hl-item{
@@ -417,7 +418,7 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
   .year-detail .yd-stat .ys-lbl{font-size:0.45rem}
 
   /* Grids to single column */
-  .upsets-grid,.highlights-grid{grid-template-columns:1fr}
+  .upsets-grid,.highlights-grid,.highlights-grid.four-col{grid-template-columns:1fr}
   .stats-grid{grid-template-columns:1fr}
 
   /* Eras */
@@ -529,7 +530,7 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
     <div class="section-rule"></div>
   </div>
   <div class="pedigree-hero" id="pedigreeHero"></div>
-  <div class="highlights-grid" id="pedigreeGrid"></div>
+  <div class="highlights-grid four-col" id="pedigreeGrid"></div>
 </section>
 
 <div class="section-divider"></div>

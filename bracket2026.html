@@ -138,8 +138,15 @@ margin-left:4px;
 font-family:'Oswald';font-size:0.75rem;color:var(--text2);
 min-width:100px;text-align:right;flex-shrink:0;
 }
-.bar-stack{display:flex;height:22px;flex:1;border-radius:3px;overflow:hidden}
-.bar-seg{height:100%;transition:width 1s ease}
+.bar-stack{display:flex;height:24px;flex:1;border-radius:3px;overflow:hidden}
+.bar-seg{
+height:100%;transition:width 1s ease;position:relative;
+display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.bar-seg .seg-val{
+font-family:'JetBrains Mono';font-size:0.55rem;color:rgba(255,255,255,0.9);
+font-weight:600;white-space:nowrap;
+}
 .bar-seg.r1{background:#e8843a}
 .bar-seg.r2{background:#d4780a}
 .bar-seg.r3{background:#b8650a}
@@ -230,6 +237,73 @@ font-weight:400;letter-spacing:0;text-transform:none;
 .fb-stake strong{color:var(--amber);font-weight:600}
 .fb-note{
 font-family:'JetBrains Mono';font-size:0.6rem;color:var(--green);
+}
+
+/* Popup overlay */
+.popup-overlay{
+position:fixed;inset:0;z-index:200;
+background:rgba(13,7,5,0.6);backdrop-filter:blur(4px);
+display:flex;align-items:center;justify-content:center;
+animation:fadeIn 0.3s;padding:1rem;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.popup-box{
+background:var(--panel);border-radius:14px;padding:2.5rem;text-align:center;
+max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);
+animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(0.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.popup-box h3{font-family:'Oswald';font-size:1.4rem;color:var(--court);margin-bottom:0.5rem}
+.popup-box p{color:var(--text2);font-size:0.9rem;margin-bottom:1.5rem}
+.popup-btns{display:flex;gap:0.75rem;justify-content:center}
+.popup-btn{
+font-family:'Oswald';font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;
+padding:0.7rem 2rem;border-radius:6px;border:none;cursor:pointer;transition:all 0.2s;
+}
+.popup-btn.yes{background:var(--amber);color:white}
+.popup-btn.yes:hover{background:var(--court)}
+.popup-btn.no{background:var(--bg2);color:var(--text2);border:1px solid var(--panel-border)}
+.popup-btn.no:hover{background:var(--bg3)}
+
+/* Paywall */
+.paywall-box{
+background:var(--panel);border-radius:14px;padding:2.5rem;text-align:center;
+max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);
+animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.paywall-box .pw-icon{font-size:3rem;margin-bottom:1rem}
+.paywall-box h3{font-family:'Oswald';font-size:1.3rem;color:var(--red);margin-bottom:0.3rem}
+.paywall-box .pw-sub{color:var(--text3);font-size:0.85rem;margin-bottom:1.5rem}
+.paywall-box .pw-price{
+font-family:'Oswald';font-size:2.5rem;font-weight:700;color:var(--court);
+margin-bottom:0.2rem;
+}
+.paywall-box .pw-price-sub{
+font-family:'JetBrains Mono';font-size:0.65rem;color:var(--text3);margin-bottom:1.5rem;
+}
+.apple-pay-btn{
+display:inline-flex;align-items:center;justify-content:center;gap:8px;
+background:#000;color:#fff;border:none;border-radius:8px;
+padding:0.85rem 2.5rem;font-size:0.95rem;cursor:pointer;
+font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+transition:all 0.2s;min-width:200px;
+}
+.apple-pay-btn:hover{background:#333}
+.apple-pay-btn .apple-logo{font-size:1.2rem}
+.apple-pay-btn.processing{pointer-events:none;opacity:0.7}
+.pw-spinner{
+display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);
+border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pw-skip{
+display:block;margin-top:1rem;font-family:'Oswald';font-size:0.6rem;
+letter-spacing:0.15em;color:var(--text3);cursor:pointer;background:none;border:none;
+text-transform:uppercase;
+}
+.pw-skip:hover{color:var(--amber)}
+.pw-success{
+font-family:'Oswald';font-size:1rem;color:var(--red);margin-top:1rem;
 }
 
 /* Footer */
@@ -420,7 +494,7 @@ const maxTotal=players[0].total;
   const colors=['r1','r2','r3','r4','r5'];
   players.forEach(p=>{
     const row=document.createElement('div');row.className='bar-row';
-    let segs=p.p.map((v,i)=>`<div class="bar-seg ${colors[i]}" style="width:${v/maxTotal*100}%" title="R${i+1}: ${v}pts"></div>`).join('');
+    let segs=p.p.map((v,i)=>`<div class="bar-seg ${colors[i]}" style="width:${v/maxTotal*100}%" title="R${i+1}: ${v}pts">${v>0?`<span class="seg-val">${v}</span>`:''}</div>`).join('');
     row.innerHTML=`<div class="bar-label">${p.name}</div><div class="bar-stack">${segs}</div><div class="bar-total mono">${p.total}</div>`;
     chart.appendChild(row);
   });
@@ -549,6 +623,70 @@ const maxTotal=players[0].total;
     bar.style.background=count>0?'var(--amber)':'var(--bg3)';
     bar.innerHTML=`<span class="db-count">${count||''}</span><span class="db-label">${range}-${+range+4}</span>`;
     chart.appendChild(bar);
+  });
+})();
+
+// ===== CORY JEZ POPUP =====
+(function(){
+  if(sessionStorage.getItem('coryCheck'))return;
+  const overlay=document.createElement('div');
+  overlay.className='popup-overlay';
+  overlay.innerHTML=`<div class="popup-box">
+    <h3>Quick question...</h3>
+    <p>Are you Cory Jez?</p>
+    <div class="popup-btns">
+      <button class="popup-btn yes" id="coryYes">Yes</button>
+      <button class="popup-btn no" id="coryNo">No</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('coryNo').addEventListener('click',()=>{
+    sessionStorage.setItem('coryCheck','no');
+    overlay.remove();
+  });
+
+  document.getElementById('coryYes').addEventListener('click',()=>{
+    sessionStorage.setItem('coryCheck','yes');
+    overlay.querySelector('.popup-box').remove();
+    const paywall=document.createElement('div');
+    paywall.className='paywall-box';
+    paywall.innerHTML=`
+      <div class="pw-icon">🔒</div>
+      <h3>Champions Must Pay to Access</h3>
+      <p class="pw-sub">As the 2026 Pool Champion, you are required to pay a viewing fee to access your own results.</p>
+      <div class="pw-price">$82.00</div>
+      <div class="pw-price-sub">One-time champion surcharge (1 dollar per point)</div>
+      <button class="apple-pay-btn" id="applePayBtn">
+        <span class="apple-logo"></span> Pay with Apple Pay
+      </button>
+      <button class="pw-skip" id="pwSkip">I'm not actually Cory</button>
+      <div id="pwStatus"></div>
+    `;
+    overlay.appendChild(paywall);
+
+    document.getElementById('applePayBtn').addEventListener('click',function(){
+      const btn=this;
+      btn.classList.add('processing');
+      btn.innerHTML='<span class="pw-spinner"></span> Processing...';
+      setTimeout(()=>{
+        btn.innerHTML='<span class="pw-spinner"></span> Verifying...';
+        setTimeout(()=>{
+          btn.innerHTML='<span class="pw-spinner"></span> Contacting bank...';
+          setTimeout(()=>{
+            btn.classList.remove('processing');
+            btn.style.background='var(--red)';
+            btn.innerHTML='Payment Declined';
+            document.getElementById('pwStatus').innerHTML='<div class="pw-success">Just kidding. Congrats on the win, Cory! 🏆</div>';
+            setTimeout(()=>overlay.remove(),3000);
+          },1500);
+        },1200);
+      },1500);
+    });
+
+    document.getElementById('pwSkip').addEventListener('click',()=>{
+      overlay.remove();
+    });
   });
 })();
 

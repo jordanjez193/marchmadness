@@ -364,6 +364,44 @@ position:absolute;top:8px;right:12px;line-height:1;
 .fact-card .fc-cat{font-family:'Oswald';font-size:0.55rem;letter-spacing:0.2em;color:var(--orange);text-transform:uppercase;margin-bottom:0.6rem}
 .fact-card .fc-text{font-size:0.85rem;color:var(--text2);line-height:1.6}
 
+/* ===== CHALK-O-METER ===== */
+.chalk-section{
+margin-top:3.5rem;padding-top:2.5rem;
+border-top:1px solid var(--bg3);
+}
+.chalk-title{
+font-family:'Oswald';font-size:1.3rem;color:var(--court);text-align:center;
+margin-bottom:0.3rem;
+}
+.chalk-sub{
+text-align:center;color:var(--text3);font-size:0.85rem;margin-bottom:2rem;
+}
+.chalk-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.6rem;
+}
+.chalk-card{
+background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+padding:0.8rem;text-align:center;position:relative;overflow:hidden;
+transition:transform 0.2s;
+}
+.chalk-card:hover{transform:translateY(-2px)}
+.chalk-card .cc-year{font-family:'Oswald';font-size:1rem;color:var(--amber);font-weight:600}
+.chalk-card .cc-city{font-size:0.6rem;color:var(--text3);margin-bottom:0.4rem}
+.chalk-card .cc-bar{
+height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:0.3rem;
+}
+.chalk-card .cc-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.chalk-card .cc-pct{font-family:'JetBrains Mono';font-size:0.7rem;font-weight:600}
+.chalk-card .cc-label{font-family:'Oswald';font-size:0.45rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase;margin-top:0.1rem}
+.chalk-card.chalkiest{border-color:var(--green);border-width:2px}
+.chalk-card.chaotic{border-color:var(--red);border-width:2px}
+.chalk-tag{
+position:absolute;top:4px;right:4px;font-family:'Oswald';font-size:0.4rem;
+letter-spacing:0.1em;padding:1px 5px;border-radius:2px;color:white;text-transform:uppercase;
+}
+.chalk-tag.most{background:var(--green)}
+.chalk-tag.least{background:var(--red)}
+
 /* ===== STATS ===== */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
 .stat-panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:1.5rem}
@@ -600,6 +638,12 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
   </div>
   <div class="facts-cats" id="factsCats"></div>
   <div class="facts-carousel" id="factsCarousel"></div>
+
+  <div class="chalk-section">
+    <h3 class="chalk-title">The Chalk-o-Meter</h3>
+    <p class="chalk-sub">How often did the higher seed win? 100% = pure chalk, lower = chaos.</p>
+    <div class="chalk-grid" id="chalkGrid"></div>
+  </div>
 </section>
 
 <div class="section-divider"></div>
@@ -1293,6 +1337,38 @@ window.addEventListener('scroll',()=>{
       }
     }
   },4000);
+
+  // ===== CHALK-O-METER =====
+  const chalkGrid=document.getElementById('chalkGrid');
+  const years=[...new Set(games.map(g=>g.y))].sort((a,b)=>a-b);
+  const chalkData=years.map(yr=>{
+    const yg=games.filter(g=>g.y===yr);
+    const chalk=yg.filter(g=>g.ws<=g.ls).length; // higher seed (lower number) won
+    const pct=Math.round(chalk/yg.length*100);
+    return {year:yr,city:yg[0].city,chalk,total:yg.length,pct};
+  });
+  const maxPct=Math.max(...chalkData.map(d=>d.pct));
+  const minPct=Math.min(...chalkData.map(d=>d.pct));
+  const chalkiest=chalkData.filter(d=>d.pct===maxPct);
+  const chaotic=chalkData.filter(d=>d.pct===minPct);
+
+  chalkData.forEach(d=>{
+    const isChalkiest=d.pct===maxPct;
+    const isChaotic=d.pct===minPct;
+    const color=d.pct>=80?'var(--green)':d.pct>=60?'var(--amber)':'var(--red)';
+    let tag='';
+    if(isChalkiest)tag='<span class="chalk-tag most">Chalkiest</span>';
+    if(isChaotic)tag='<span class="chalk-tag least">Most Chaotic</span>';
+    const card=document.createElement('div');
+    card.className='chalk-card'+(isChalkiest?' chalkiest':'')+(isChaotic?' chaotic':'');
+    card.innerHTML=`${tag}
+      <div class="cc-year">${d.year}</div>
+      <div class="cc-city">${d.city}</div>
+      <div class="cc-bar"><div class="cc-fill" style="width:${d.pct}%;background:${color}"></div></div>
+      <div class="cc-pct" style="color:${color}">${d.pct}%</div>
+      <div class="cc-label">${d.chalk}/${d.total} chalk</div>`;
+    chalkGrid.appendChild(card);
+  });
 })();
 
 // ===== STATS =====
@@ -1346,7 +1422,7 @@ window.addEventListener('scroll',()=>{
 
 // Fade-in
 const fObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';fObs.unobserve(e.target)}})},{threshold:0.1});
-document.querySelectorAll('.section-head,.stat-panel,.upset-card,.era-row,.hl-panel,.ped-big-stat').forEach(el=>{
+document.querySelectorAll('.section-head,.stat-panel,.upset-card,.era-row,.hl-panel,.ped-big-stat,.chalk-section').forEach(el=>{
   el.style.opacity='0';el.style.transform='translateY(20px)';el.style.transition='opacity 0.6s ease, transform 0.6s ease';
   fObs.observe(el);
 });

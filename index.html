@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Jez Family March Madness Tradition</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson@3"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#faf7f2;--bg2:#f0ebe3;--bg3:#e8e1d5;
+--panel:#ffffff;--panel-border:#e0d6c8;
+--text:#2c1810;--text2:#5a4636;--text3:#8a7a6a;
+--amber:#d4780a;--amber-light:#f5a623;--amber-bg:rgba(212,120,10,0.08);
+--orange:#e8843a;--red:#c0392b;--red-bg:rgba(192,57,43,0.06);
+--green:#2d8a4e;
+--court:#3b2314;
+}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{font-family:'Source Serif 4',Georgia,serif;color:var(--text);background:var(--bg);overflow-x:hidden;line-height:1.6}
+h1,h2,h3,h4,h5,h6,.label{font-family:'Oswald',sans-serif;letter-spacing:0.04em;text-transform:uppercase}
+.mono{font-family:'JetBrains Mono',monospace}
+
+body::before{
+content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+background:
+  radial-gradient(ellipse at 50% 0%,rgba(212,120,10,0.04),transparent 60%),
+  repeating-linear-gradient(90deg,transparent,transparent 119px,rgba(212,120,10,0.015) 119px,rgba(212,120,10,0.015) 120px),
+  repeating-linear-gradient(0deg,transparent,transparent 119px,rgba(212,120,10,0.015) 119px,rgba(212,120,10,0.015) 120px);
+}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--amber);border-radius:3px}
+
+/* ===== NAV ===== */
+.nav{
+position:fixed;top:0;left:0;right:0;z-index:100;
+padding:0.75rem 2rem;display:flex;justify-content:center;gap:1.5rem;
+background:rgba(250,247,242,0.92);backdrop-filter:blur(12px);
+border-bottom:1px solid var(--panel-border);
+transform:translateY(-100%);transition:transform 0.3s;
+}
+.nav.visible{transform:translateY(0)}
+.nav a{
+font-family:'Oswald';font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;
+color:var(--text3);text-decoration:none;transition:all 0.3s;
+}
+.nav a:hover{color:var(--amber)}
+
+/* ===== HERO ===== */
+.hero{
+min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+text-align:center;padding:2rem;position:relative;overflow:hidden;
+}
+.hero::before{
+content:'';position:absolute;top:50%;left:50%;width:420px;height:420px;
+border:1.5px solid rgba(212,120,10,0.1);border-radius:50%;
+transform:translate(-50%,-50%);animation:pulse-ring 4s ease-in-out infinite;
+}
+@keyframes pulse-ring{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.7;transform:translate(-50%,-50%) scale(1.04)}}
+
+.hero-badge{
+display:inline-block;padding:0.4rem 1.6rem;border:1px solid var(--amber);
+font-family:'Oswald';font-size:0.7rem;letter-spacing:0.3em;text-transform:uppercase;
+color:var(--amber);margin-bottom:2rem;opacity:0;animation:fadeUp 0.8s 0.2s forwards;
+}
+.hero h1{
+font-size:clamp(2.5rem,7vw,5.5rem);font-weight:700;line-height:1.05;
+color:var(--court);margin-bottom:0.5rem;opacity:0;animation:fadeUp 0.8s 0.4s forwards;
+}
+.hero h1 span{color:var(--amber);display:block;font-weight:300;font-size:0.5em;margin-top:0.2em}
+.hero-sub{
+font-size:1rem;color:var(--text2);max-width:500px;margin:1rem auto 3rem;
+font-style:italic;opacity:0;animation:fadeUp 0.8s 0.6s forwards;
+}
+
+.hero-stats{
+display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;align-items:flex-end;
+opacity:0;animation:fadeUp 0.8s 0.8s forwards;
+}
+.hero-stat{
+text-align:center;padding:1.2rem 1.8rem;border-radius:8px;
+background:var(--panel);border:1px solid var(--panel-border);
+box-shadow:0 2px 12px rgba(0,0,0,0.03);
+transition:transform 0.3s, box-shadow 0.3s;
+}
+.hero-stat:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(212,120,10,0.1)}
+.hero-stat .num{
+font-family:'Oswald';font-size:2.2rem;font-weight:700;
+color:var(--text2);line-height:1;display:block;
+}
+.hero-stat .lbl{
+font-family:'Oswald';font-size:0.6rem;letter-spacing:0.25em;
+color:var(--text3);text-transform:uppercase;margin-top:0.4rem;
+}
+/* Primary stat gets emphasis */
+.hero-stat.primary{
+padding:1.5rem 2.5rem;
+background:var(--court);border-color:var(--court);
+box-shadow:0 4px 20px rgba(59,35,20,0.15);
+}
+.hero-stat.primary .num{font-size:clamp(3rem,6vw,4.5rem);color:var(--amber-light)}
+.hero-stat.primary .lbl{color:rgba(255,255,255,0.6)}
+/* Secondary stats */
+.hero-stat.secondary .num{color:var(--amber);font-size:2.6rem}
+/* Accent dot before label */
+.hero-stat .lbl::before{
+content:'';display:inline-block;width:4px;height:4px;border-radius:50%;
+background:var(--amber);margin-right:6px;vertical-align:middle;
+}
+.hero-stat.primary .lbl::before{background:var(--amber-light)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.scroll-hint{
+position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+font-family:'Oswald';font-size:0.6rem;letter-spacing:0.3em;color:var(--text3);
+text-transform:uppercase;animation:bob 2s ease-in-out infinite;
+}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+
+/* ===== SECTION DIVIDER (court line arc) ===== */
+.section-divider{
+position:relative;height:60px;max-width:1300px;margin:0 auto;
+display:flex;align-items:center;justify-content:center;
+}
+.section-divider::before{
+content:'';width:120px;height:60px;border:1.5px solid var(--bg3);
+border-bottom:none;border-radius:60px 60px 0 0;
+}
+.section-divider::after{
+content:'';position:absolute;top:50%;left:50%;width:8px;height:8px;
+background:var(--amber);border-radius:50%;transform:translate(-50%,-50%);
+}
+
+/* ===== SECTIONS ===== */
+.section{padding:5rem 2rem 3rem;max-width:1300px;margin:0 auto}
+.section-head{text-align:center;margin-bottom:4rem}
+.section-head h2{
+font-size:clamp(1.8rem,4vw,2.8rem);font-weight:600;color:var(--court);margin-bottom:0.5rem;
+}
+.section-head h2 span{color:var(--amber)}
+.section-head p{color:var(--text3);max-width:550px;margin:0 auto;font-size:0.95rem}
+.section-rule{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent);margin:1rem auto 0}
+
+/* ===== MAP ===== */
+.map-wrap{
+position:relative;max-width:960px;margin:0 auto;
+background:var(--panel);border-radius:12px;padding:1.5rem;
+border:1px solid var(--panel-border);
+box-shadow:0 4px 24px rgba(0,0,0,0.04);
+}
+#mapContainer svg{width:100%;height:auto;display:block}
+.state{fill:#ddd5c8;stroke:#fff;stroke-width:1;transition:fill 0.2s}
+.state:hover{fill:#cfc4b3}
+.state-border{fill:none;stroke:#b8ad9e;stroke-width:0.6}
+.map-dot{cursor:pointer;transition:all 0.3s}
+.map-dot circle.outer{fill:var(--amber);opacity:0.2;transition:all 0.3s}
+.map-dot circle.inner{fill:var(--amber);transition:all 0.3s}
+.map-dot:hover circle.outer{opacity:0.45;r:12}
+.map-dot:hover circle.inner{fill:var(--orange);r:5}
+.map-dot.multi circle.inner{fill:var(--court)}
+.map-tooltip{
+position:absolute;pointer-events:none;background:var(--panel);
+border:1px solid var(--panel-border);padding:0.75rem 1rem;border-radius:6px;
+font-family:'Oswald';font-size:0.8rem;color:var(--text);white-space:nowrap;
+opacity:0;transition:opacity 0.2s;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.08);
+}
+.map-tooltip .tt-city{color:var(--amber);font-size:0.95rem;font-weight:600}
+.map-tooltip .tt-years{color:var(--text2);font-size:0.75rem;margin-top:2px}
+.map-tooltip .tt-venue{color:var(--text3);font-size:0.7rem;font-family:'Source Serif 4';font-style:italic}
+
+/* ===== TIMELINE ===== */
+.timeline-track{
+display:flex;gap:0.6rem;overflow-x:auto;padding:1rem 0 2rem;
+scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+}
+.timeline-track::-webkit-scrollbar{height:4px}
+.year-card{
+flex:0 0 auto;width:100px;padding:0.8rem;text-align:center;
+background:var(--panel);border:1px solid var(--panel-border);border-radius:6px;
+cursor:pointer;transition:all 0.3s;scroll-snap-align:center;
+}
+.year-card:hover,.year-card.active{
+border-color:var(--amber);background:var(--amber-bg);transform:translateY(-4px);
+box-shadow:0 6px 20px rgba(212,120,10,0.12);
+}
+.year-card.active{border-bottom:3px solid var(--amber)}
+.year-card .yc-year{font-family:'Oswald';font-size:1.3rem;font-weight:600;color:var(--amber)}
+.year-card .yc-city{font-size:0.6rem;color:var(--text3);margin-top:3px;line-height:1.3}
+
+.year-detail{
+margin-top:2rem;background:var(--panel);border:1px solid var(--panel-border);
+border-radius:8px;padding:2rem;display:none;animation:fadeUp 0.4s forwards;
+box-shadow:0 2px 16px rgba(0,0,0,0.04);
+}
+.year-detail.show{display:block}
+.year-detail h3{font-size:1.4rem;color:var(--amber);margin-bottom:0.3rem}
+.year-detail .yd-venue{font-style:italic;color:var(--text3);font-size:0.85rem;margin-bottom:0.5rem}
+.year-detail .yd-stats{
+display:flex;gap:2rem;margin-bottom:1.5rem;padding:0.75rem 1rem;
+background:var(--bg2);border-radius:6px;flex-wrap:wrap;
+}
+.year-detail .yd-stat{text-align:center}
+.year-detail .yd-stat .ys-val{font-family:'Oswald';font-size:1.2rem;color:var(--amber);display:block}
+.year-detail .yd-stat .ys-lbl{font-family:'Oswald';font-size:0.55rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase}
+
+.game-row{
+display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center;
+padding:0.75rem 0;border-bottom:1px solid var(--bg2);
+}
+.game-row:last-child{border-bottom:none}
+.game-row.upset{background:var(--red-bg);margin:0 -1rem;padding:0.75rem 1rem;border-radius:4px}
+.game-winner{text-align:right}
+.game-loser{text-align:left;opacity:0.45}
+.game-team{font-family:'Oswald';font-size:0.95rem;color:var(--text)}
+.game-seed{
+display:inline-block;font-family:'JetBrains Mono';font-size:0.6rem;
+background:var(--amber-bg);color:var(--amber);padding:2px 5px;border-radius:3px;
+margin:0 3px;
+}
+.game-center{text-align:center}
+.game-score{font-family:'JetBrains Mono';font-size:0.85rem;color:var(--court);white-space:nowrap;font-weight:600}
+.game-round{font-family:'Oswald';font-size:0.5rem;letter-spacing:0.15em;color:var(--text3);text-transform:uppercase}
+.game-margin{font-family:'JetBrains Mono';font-size:0.55rem;color:var(--text3)}
+.game-row.upset .game-winner .game-team{color:var(--red)}
+.upset-badge{
+font-family:'Oswald';font-size:0.5rem;background:var(--red);color:white;
+padding:1px 5px;border-radius:2px;margin-left:4px;letter-spacing:0.1em;
+vertical-align:middle;
+}
+
+/* ===== UPSETS ===== */
+.upsets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem}
+.upset-card{
+background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+padding:1.5rem;padding-left:1.75rem;position:relative;overflow:hidden;transition:all 0.3s;
+border-left:3px solid var(--red);
+}
+.upset-card:hover{border-color:var(--red);transform:translateY(-3px);box-shadow:0 6px 20px rgba(192,57,43,0.1)}
+.upset-card::before{
+content:'UPSET';position:absolute;top:10px;right:-22px;
+font-family:'Oswald';font-size:0.5rem;letter-spacing:0.3em;
+background:var(--red);color:white;padding:2px 30px;transform:rotate(45deg);
+}
+.upset-card .uc-year{font-family:'JetBrains Mono';font-size:0.7rem;color:var(--orange)}
+.upset-card .uc-matchup{font-family:'Oswald';font-size:1.2rem;color:var(--text);margin:0.4rem 0 0.2rem}
+.upset-card .uc-detail{font-size:0.8rem;color:var(--text3)}
+.upset-card .uc-diff{font-family:'Oswald';font-size:2rem;color:var(--red);opacity:0.12;position:absolute;bottom:8px;right:14px}
+
+/* ===== GAME HIGHLIGHTS ===== */
+/* ===== PEDIGREE ===== */
+.pedigree-hero{
+display:flex;gap:1.5rem;margin-bottom:2.5rem;flex-wrap:wrap;justify-content:center;
+}
+.ped-big-stat{
+background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+padding:1.5rem 2.5rem;text-align:center;flex:1;min-width:160px;
+}
+.ped-big-stat .pbs-val{font-family:'Oswald';font-size:2.8rem;font-weight:700;color:var(--amber);line-height:1}
+.ped-big-stat .pbs-lbl{font-family:'Oswald';font-size:0.6rem;letter-spacing:0.2em;color:var(--text3);text-transform:uppercase;margin-top:0.3rem}
+.champ-badge{
+display:inline-block;font-family:'Oswald';font-size:0.5rem;letter-spacing:0.15em;
+background:var(--amber);color:white;padding:2px 8px;border-radius:2px;
+text-transform:uppercase;vertical-align:middle;margin-left:4px;
+}
+.ff-badge{
+display:inline-block;font-family:'Oswald';font-size:0.5rem;letter-spacing:0.15em;
+background:var(--green);color:white;padding:2px 8px;border-radius:2px;
+text-transform:uppercase;vertical-align:middle;margin-left:4px;
+}
+.region-bar-wrap{margin-bottom:0.6rem}
+.region-bar-label{display:flex;justify-content:space-between;margin-bottom:3px}
+.region-bar-label span:first-child{font-family:'Oswald';font-size:0.8rem;color:var(--text)}
+.region-bar-label span:last-child{font-family:'JetBrains Mono';font-size:0.7rem;color:var(--amber)}
+.region-bar-track{height:20px;background:var(--bg2);border-radius:4px;overflow:hidden;position:relative}
+.region-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+
+.highlights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem}
+.hl-panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:1.5rem}
+.hl-panel h4{font-size:0.7rem;letter-spacing:0.2em;color:var(--amber);margin-bottom:1rem}
+.hl-item{
+display:flex;justify-content:space-between;align-items:center;
+padding:0.5rem 0;border-bottom:1px solid var(--bg2);font-size:0.8rem;
+}
+.hl-item:last-child{border-bottom:none}
+.hl-item .hl-teams{color:var(--text);font-family:'Oswald';font-size:0.85rem}
+.hl-item .hl-sub{color:var(--text3);font-size:0.7rem}
+.hl-item .hl-val{font-family:'JetBrains Mono';font-size:0.75rem;color:var(--amber);white-space:nowrap}
+
+/* ===== FUN FACTS ===== */
+.facts-cats{display:flex;justify-content:center;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap}
+.facts-cat-btn{
+font-family:'Oswald';font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;
+padding:0.45rem 1rem;border:1px solid var(--panel-border);background:var(--panel);
+color:var(--text3);border-radius:4px;cursor:pointer;transition:all 0.3s;
+}
+.facts-cat-btn.active,.facts-cat-btn:hover{
+border-color:var(--amber);color:var(--amber);background:var(--amber-bg);
+}
+.facts-carousel{
+display:flex;gap:1.25rem;overflow-x:auto;padding:1rem 0 2rem;scroll-snap-type:x mandatory;
+}
+.facts-carousel::-webkit-scrollbar{height:3px}
+.fact-card{
+flex:0 0 auto;width:320px;padding:1.5rem;scroll-snap-align:center;
+background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+position:relative;
+}
+.fact-card .fc-num{
+font-family:'Oswald';font-size:2.5rem;font-weight:700;color:var(--amber);opacity:0.08;
+position:absolute;top:8px;right:12px;line-height:1;
+}
+.fact-card .fc-cat{font-family:'Oswald';font-size:0.55rem;letter-spacing:0.2em;color:var(--orange);text-transform:uppercase;margin-bottom:0.6rem}
+.fact-card .fc-text{font-size:0.85rem;color:var(--text2);line-height:1.6}
+
+/* ===== STATS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.stat-panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:1.5rem}
+.stat-panel h4{font-size:0.7rem;letter-spacing:0.2em;color:var(--amber);margin-bottom:1rem}
+.stat-bar{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem}
+.stat-bar .sb-label{font-family:'Oswald';font-size:0.8rem;color:var(--text);min-width:110px;text-align:right}
+.stat-bar .sb-track{flex:1;height:14px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.stat-bar .sb-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--amber-light));border-radius:3px;transition:width 1s ease}
+.stat-bar .sb-val{font-family:'JetBrains Mono';font-size:0.65rem;color:var(--amber);min-width:28px}
+.stat-list-item{display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--bg2);font-size:0.8rem}
+.stat-list-item:last-child{border-bottom:none}
+.stat-list-item .sli-name{color:var(--text2)}
+.stat-list-item .sli-val{font-family:'JetBrains Mono';color:var(--amber);font-size:0.75rem}
+
+/* ===== ERAS ===== */
+.eras-timeline{display:flex;flex-direction:column}
+.era-row{
+display:grid;grid-template-columns:130px 1fr;gap:2rem;
+padding:1.75rem 0;border-bottom:1px solid var(--bg2);position:relative;
+}
+.era-row::before{
+content:'';position:absolute;left:130px;top:0;bottom:0;width:2px;
+background:var(--bg3);transform:translateX(1rem);
+}
+.era-dates{font-family:'JetBrains Mono';font-size:0.8rem;color:var(--orange);text-align:right;padding-top:0.2rem}
+.era-content{padding-left:2.5rem;position:relative}
+.era-content::before{
+content:'';position:absolute;left:calc(-2rem + 14px + 2px);top:0.45rem;
+width:10px;height:10px;background:var(--amber);border-radius:50%;border:2px solid var(--bg);
+}
+.era-content h4{font-size:1.05rem;color:var(--text);margin-bottom:0.25rem;font-weight:500}
+.era-content p{font-size:0.85rem;color:var(--text3);max-width:520px}
+.era-games-count{font-family:'JetBrains Mono';font-size:0.65rem;color:var(--amber);margin-top:0.4rem}
+
+/* ===== BACK TO TOP ===== */
+.back-to-top{
+position:fixed;bottom:2rem;right:2rem;z-index:90;
+width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
+background:var(--court);color:var(--amber-light);
+font-family:'Oswald';font-size:1.2rem;line-height:42px;text-align:center;
+box-shadow:0 4px 16px rgba(59,35,20,0.2);
+opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
+}
+.back-to-top.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.back-to-top:hover{background:var(--amber);color:white;transform:translateY(-2px)}
+
+/* ===== FOOTER ===== */
+.footer{text-align:center;padding:4rem 2rem;border-top:1px solid var(--bg3)}
+.footer p{font-family:'Oswald';font-size:0.65rem;letter-spacing:0.2em;color:var(--text3)}
+
+@media(max-width:768px){
+  .hero-stats{gap:0.75rem}
+  .hero-stat{padding:0.8rem 1.2rem}
+  .hero-stat.primary{padding:1rem 1.5rem}
+  .hero-stat.primary .num{font-size:2.5rem}
+  .hero-stat.secondary .num{font-size:1.8rem}
+  .game-row{grid-template-columns:1fr;gap:0.25rem;text-align:center}
+  .game-winner,.game-loser{text-align:center}
+  .upsets-grid,.highlights-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr}
+  .era-row{grid-template-columns:1fr;gap:0.5rem}
+  .era-row::before,.era-content::before{display:none}
+  .era-content{padding-left:0}
+  .era-dates{text-align:left}
+  .nav{gap:0.75rem;padding:0.75rem 1rem;flex-wrap:wrap}
+  .nav a{font-size:0.55rem}
+  .section{padding:4rem 1rem}
+  .fact-card{width:270px}
+  .year-detail .yd-stats{gap:1rem}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a href="#map">Map</a>
+  <a href="#timeline">Timeline</a>
+  <a href="#upsets">Upsets</a>
+  <a href="#pedigree">Pedigree</a>
+  <a href="#highlights">Highlights</a>
+  <a href="#facts">Facts</a>
+  <a href="#stats">Stats</a>
+  <a href="#eras">Eras</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">Est. 1990</div>
+  <h1>The Jez Family<span>March Madness Tradition</span></h1>
+  <p class="hero-sub">33 years of first and second round tournament basketball, coast to coast.</p>
+  <div class="hero-stats">
+    <div class="hero-stat secondary"><span class="num" data-target="33">0</span><span class="lbl">Years</span></div>
+    <div class="hero-stat secondary"><span class="num" data-target="23">0</span><span class="lbl">Cities</span></div>
+    <div class="hero-stat primary"><span class="num" data-target="198">0</span><span class="lbl">Games Witnessed</span></div>
+    <div class="hero-stat secondary"><span class="num" data-target="33">0</span><span class="lbl">Pods</span></div>
+  </div>
+  <div class="scroll-hint">Scroll to explore</div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="map">
+  <div class="section-head">
+    <h2>Coast to <span>Coast</span></h2>
+    <p>Every city the Jez family has called home for a March Madness weekend</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="map-wrap">
+    <div class="map-tooltip" id="mapTooltip"></div>
+    <div id="mapContainer"></div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="timeline">
+  <div class="section-head">
+    <h2>Every <span>Pod</span></h2>
+    <p>33 trips, 198 games. Click a year to see every matchup.</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="timeline-track" id="timelineTrack"></div>
+  <div class="year-detail" id="yearDetail"></div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="upsets">
+  <div class="section-head">
+    <h2>Biggest <span>Upsets</span> Witnessed</h2>
+    <p>The bracket-busting moments the Jez family saw live</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="upsets-grid" id="upsetsGrid"></div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="pedigree">
+  <div class="section-head">
+    <h2>Tournament <span>Pedigree</span></h2>
+    <p>How many future champions and Final Four teams did the Jez family witness before their deep runs?</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="pedigree-hero" id="pedigreeHero"></div>
+  <div class="highlights-grid" id="pedigreeGrid"></div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="highlights">
+  <div class="section-head">
+    <h2>Game <span>Highlights</span></h2>
+    <p>The highest-scoring, closest, and most lopsided games across 33 years</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="highlights-grid" id="highlightsGrid"></div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="facts">
+  <div class="section-head">
+    <h2>Did You <span>Know?</span></h2>
+    <p>50 facts and figures from 33 years of tournament basketball</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="facts-cats" id="factsCats"></div>
+  <div class="facts-carousel" id="factsCarousel"></div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="stats">
+  <div class="section-head">
+    <h2>By the <span>Numbers</span></h2>
+    <p>Patterns and favorites from three decades of March Madness</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="stats-grid" id="statsGrid"></div>
+</section>
+
+<div class="section-divider"></div>
+<section class="section" id="eras">
+  <div class="section-head">
+    <h2>Seven <span>Eras</span></h2>
+    <p>How the tournament evolved across the Jez family's tradition</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="eras-timeline" id="erasTimeline"></div>
+</section>
+
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0})">&#9650;</button>
+
+<footer class="footer">
+  <p>The Jez Family March Madness Tradition &mdash; 1990&ndash;2026</p>
+</footer>
+
+<script>
+// ===== DATA =====
+const games=[
+{y:2026,venue:"Viejas Arena",city:"San Diego",w:"Arizona",ws:1,l:"LIU",ls:16,sc:"92-52",r:"First Round"},
+{y:2026,venue:"Viejas Arena",city:"San Diego",w:"Arizona",ws:1,l:"Utah State",ls:9,sc:"78-66",r:"Second Round"},
+{y:2026,venue:"Viejas Arena",city:"San Diego",w:"Kansas",ws:4,l:"Cal Baptist",ls:13,sc:"68-60",r:"First Round"},
+{y:2026,venue:"Viejas Arena",city:"San Diego",w:"St. John's",ws:5,l:"UNI",ls:12,sc:"79-53",r:"First Round"},
+{y:2026,venue:"Viejas Arena",city:"San Diego",w:"St. John's",ws:5,l:"Kansas",ls:4,sc:"67-65",r:"Second Round"},
+{y:2026,venue:"Viejas Arena",city:"San Diego",w:"Utah State",ws:9,l:"Villanova",ls:8,sc:"86-76",r:"First Round"},
+{y:2025,venue:"PNC Arena",city:"Raleigh",w:"Duke",ws:1,l:"Mt. St. Mary's",ls:16,sc:"93-49",r:"First Round"},
+{y:2025,venue:"PNC Arena",city:"Raleigh",w:"Duke",ws:1,l:"Baylor",ls:9,sc:"89-66",r:"Second Round"},
+{y:2025,venue:"PNC Arena",city:"Raleigh",w:"Florida",ws:1,l:"Norfolk State",ls:16,sc:"95-69",r:"First Round"},
+{y:2025,venue:"PNC Arena",city:"Raleigh",w:"Florida",ws:1,l:"UConn",ls:8,sc:"77-75",r:"Second Round"},
+{y:2025,venue:"PNC Arena",city:"Raleigh",w:"UConn",ws:8,l:"Oklahoma",ls:9,sc:"67-59",r:"First Round"},
+{y:2025,venue:"PNC Arena",city:"Raleigh",w:"Baylor",ws:9,l:"Miss. State",ls:8,sc:"75-72",r:"First Round"},
+{y:2024,venue:"Barclays Center",city:"Brooklyn",w:"UConn",ws:1,l:"Stetson",ls:16,sc:"91-52",r:"First Round"},
+{y:2024,venue:"Barclays Center",city:"Brooklyn",w:"UConn",ws:1,l:"Northwestern",ls:9,sc:"75-58",r:"Second Round"},
+{y:2024,venue:"Barclays Center",city:"Brooklyn",w:"Duke",ws:4,l:"Vermont",ls:13,sc:"64-47",r:"First Round"},
+{y:2024,venue:"Barclays Center",city:"Brooklyn",w:"Duke",ws:4,l:"James Madison",ls:12,sc:"93-55",r:"Second Round"},
+{y:2024,venue:"Barclays Center",city:"Brooklyn",w:"Northwestern",ws:9,l:"FAU",ls:8,sc:"77-65",r:"First Round"},
+{y:2024,venue:"Barclays Center",city:"Brooklyn",w:"James Madison",ws:12,l:"Wisconsin",ls:5,sc:"72-61",r:"First Round"},
+{y:2023,venue:"Amway Center",city:"Orlando",w:"Tennessee",ws:4,l:"Louisiana",ls:13,sc:"58-55",r:"First Round"},
+{y:2023,venue:"Amway Center",city:"Orlando",w:"Tennessee",ws:4,l:"Duke",ls:5,sc:"65-52",r:"Second Round"},
+{y:2023,venue:"Amway Center",city:"Orlando",w:"Duke",ws:5,l:"Oral Roberts",ls:12,sc:"74-51",r:"First Round"},
+{y:2023,venue:"Amway Center",city:"Orlando",w:"San Diego State",ws:5,l:"Charleston",ls:12,sc:"63-57",r:"First Round"},
+{y:2023,venue:"Amway Center",city:"Orlando",w:"San Diego State",ws:5,l:"Furman",ls:13,sc:"75-52",r:"Second Round"},
+{y:2023,venue:"Amway Center",city:"Orlando",w:"Furman",ws:13,l:"Virginia",ls:4,sc:"68-67",r:"First Round"},
+{y:2022,venue:"Moda Center",city:"Portland",w:"Gonzaga",ws:1,l:"Georgia State",ls:16,sc:"93-72",r:"First Round"},
+{y:2022,venue:"Moda Center",city:"Portland",w:"Gonzaga",ws:1,l:"Memphis",ls:9,sc:"82-78",r:"Second Round"},
+{y:2022,venue:"Moda Center",city:"Portland",w:"UCLA",ws:4,l:"Akron",ls:13,sc:"57-53",r:"First Round"},
+{y:2022,venue:"Moda Center",city:"Portland",w:"UCLA",ws:4,l:"Saint Mary's",ls:5,sc:"72-56",r:"Second Round"},
+{y:2022,venue:"Moda Center",city:"Portland",w:"Saint Mary's",ws:5,l:"Indiana",ls:12,sc:"82-53",r:"First Round"},
+{y:2022,venue:"Moda Center",city:"Portland",w:"Memphis",ws:9,l:"Boise State",ls:8,sc:"64-53",r:"First Round"},
+{y:2019,venue:"Vivint Smart Home Arena",city:"Salt Lake City",w:"Gonzaga",ws:1,l:"FDU",ls:16,sc:"87-49",r:"First Round"},
+{y:2019,venue:"Vivint Smart Home Arena",city:"Salt Lake City",w:"Gonzaga",ws:1,l:"Baylor",ls:9,sc:"83-71",r:"Second Round"},
+{y:2019,venue:"Vivint Smart Home Arena",city:"Salt Lake City",w:"Kansas",ws:4,l:"Northeastern",ls:13,sc:"87-53",r:"First Round"},
+{y:2019,venue:"Vivint Smart Home Arena",city:"Salt Lake City",w:"Auburn",ws:5,l:"New Mexico State",ls:12,sc:"78-77",r:"First Round"},
+{y:2019,venue:"Vivint Smart Home Arena",city:"Salt Lake City",w:"Auburn",ws:5,l:"Kansas",ls:4,sc:"89-75",r:"Second Round"},
+{y:2019,venue:"Vivint Smart Home Arena",city:"Salt Lake City",w:"Baylor",ws:9,l:"Syracuse",ls:8,sc:"78-69",r:"First Round"},
+{y:2018,venue:"Bridgestone Arena",city:"Nashville",w:"Xavier",ws:1,l:"Texas Southern",ls:16,sc:"102-83",r:"First Round"},
+{y:2018,venue:"Bridgestone Arena",city:"Nashville",w:"Nevada",ws:7,l:"Texas",ls:10,sc:"87-83",r:"First Round"},
+{y:2018,venue:"Bridgestone Arena",city:"Nashville",w:"Nevada",ws:7,l:"Cincinnati",ls:2,sc:"75-73",r:"Second Round"},
+{y:2018,venue:"Bridgestone Arena",city:"Nashville",w:"Florida State",ws:9,l:"Missouri",ls:8,sc:"67-54",r:"First Round"},
+{y:2018,venue:"Bridgestone Arena",city:"Nashville",w:"Florida State",ws:9,l:"Xavier",ls:1,sc:"75-70",r:"Second Round"},
+{y:2018,venue:"Bridgestone Arena",city:"Nashville",w:"Cincinnati",ws:15,l:"Georgia State",ls:2,sc:"68-53",r:"First Round"},
+{y:2017,venue:"Amway Center",city:"Orlando",w:"Florida State",ws:3,l:"FGCU",ls:14,sc:"86-80",r:"First Round"},
+{y:2017,venue:"Amway Center",city:"Orlando",w:"Florida",ws:4,l:"ETSU",ls:13,sc:"80-65",r:"First Round"},
+{y:2017,venue:"Amway Center",city:"Orlando",w:"Florida",ws:4,l:"Virginia",ls:5,sc:"65-39",r:"Second Round"},
+{y:2017,venue:"Amway Center",city:"Orlando",w:"Virginia",ws:5,l:"UNC Wilmington",ls:12,sc:"76-71",r:"First Round"},
+{y:2017,venue:"Amway Center",city:"Orlando",w:"Xavier",ws:11,l:"Maryland",ls:6,sc:"76-65",r:"First Round"},
+{y:2017,venue:"Amway Center",city:"Orlando",w:"Xavier",ws:11,l:"Florida State",ls:3,sc:"91-66",r:"Second Round"},
+{y:2016,venue:"Barclays Center",city:"Brooklyn",w:"Villanova",ws:2,l:"UNC Asheville",ls:15,sc:"86-56",r:"First Round"},
+{y:2016,venue:"Barclays Center",city:"Brooklyn",w:"Villanova",ws:2,l:"Iowa",ls:7,sc:"87-68",r:"Second Round"},
+{y:2016,venue:"Barclays Center",city:"Brooklyn",w:"Notre Dame",ws:6,l:"Michigan",ls:11,sc:"70-63",r:"First Round"},
+{y:2016,venue:"Barclays Center",city:"Brooklyn",w:"Notre Dame",ws:6,l:"Stephen F. Austin",ls:14,sc:"76-75",r:"Second Round"},
+{y:2016,venue:"Barclays Center",city:"Brooklyn",w:"Iowa",ws:7,l:"Temple",ls:10,sc:"72-70",r:"First Round"},
+{y:2016,venue:"Barclays Center",city:"Brooklyn",w:"Stephen F. Austin",ws:14,l:"West Virginia",ls:3,sc:"70-56",r:"First Round"},
+{y:2015,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"UNC",ws:4,l:"Harvard",ls:13,sc:"67-65",r:"First Round"},
+{y:2015,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"UNC",ws:4,l:"Arkansas",ls:5,sc:"87-78",r:"Second Round"},
+{y:2015,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Arkansas",ws:5,l:"Wofford",ls:12,sc:"56-53",r:"First Round"},
+{y:2015,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Xavier",ws:6,l:"Ole Miss",ls:11,sc:"76-57",r:"First Round"},
+{y:2015,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Xavier",ws:6,l:"Georgia State",ls:14,sc:"75-67",r:"Second Round"},
+{y:2015,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Georgia State",ws:14,l:"Baylor",ls:3,sc:"57-56",r:"First Round"},
+{y:2014,venue:"Amway Center",city:"Orlando",w:"Florida",ws:1,l:"Albany",ls:16,sc:"67-55",r:"First Round"},
+{y:2014,venue:"Amway Center",city:"Orlando",w:"Florida",ws:1,l:"Pitt",ls:9,sc:"61-45",r:"Second Round"},
+{y:2014,venue:"Amway Center",city:"Orlando",w:"Louisville",ws:4,l:"Manhattan",ls:13,sc:"71-64",r:"First Round"},
+{y:2014,venue:"Amway Center",city:"Orlando",w:"Louisville",ws:4,l:"Saint Louis",ls:5,sc:"66-51",r:"Second Round"},
+{y:2014,venue:"Amway Center",city:"Orlando",w:"Saint Louis",ws:5,l:"NC State",ls:12,sc:"83-80",r:"First Round"},
+{y:2014,venue:"Amway Center",city:"Orlando",w:"Pitt",ws:9,l:"Colorado",ls:8,sc:"77-48",r:"First Round"},
+{y:2013,venue:"Frank Erwin Center",city:"Austin",w:"Miami (FL)",ws:2,l:"Pacific",ls:15,sc:"78-49",r:"First Round"},
+{y:2013,venue:"Frank Erwin Center",city:"Austin",w:"Miami (FL)",ws:2,l:"Illinois",ls:7,sc:"63-59",r:"Second Round"},
+{y:2013,venue:"Frank Erwin Center",city:"Austin",w:"Florida",ws:3,l:"Northwestern State",ls:14,sc:"79-47",r:"First Round"},
+{y:2013,venue:"Frank Erwin Center",city:"Austin",w:"Florida",ws:3,l:"Minnesota",ls:11,sc:"78-64",r:"Second Round"},
+{y:2013,venue:"Frank Erwin Center",city:"Austin",w:"Illinois",ws:7,l:"Colorado",ls:10,sc:"57-49",r:"First Round"},
+{y:2013,venue:"Frank Erwin Center",city:"Austin",w:"Minnesota",ws:11,l:"UCLA",ls:6,sc:"83-63",r:"First Round"},
+{y:2012,venue:"Bridgestone Arena",city:"Nashville",w:"Florida State",ws:3,l:"St. Bonaventure",ls:14,sc:"66-63",r:"First Round"},
+{y:2012,venue:"Bridgestone Arena",city:"Nashville",w:"Cincinnati",ws:6,l:"Texas",ls:11,sc:"65-59",r:"First Round"},
+{y:2012,venue:"Bridgestone Arena",city:"Nashville",w:"Cincinnati",ws:6,l:"Florida State",ls:3,sc:"62-56",r:"Second Round"},
+{y:2012,venue:"Bridgestone Arena",city:"Nashville",w:"South Florida",ws:12,l:"Temple",ls:5,sc:"58-44",r:"First Round"},
+{y:2012,venue:"Bridgestone Arena",city:"Nashville",w:"Ohio",ws:13,l:"Michigan",ls:4,sc:"65-60",r:"First Round"},
+{y:2012,venue:"Bridgestone Arena",city:"Nashville",w:"Ohio",ws:13,l:"South Florida",ls:12,sc:"62-56",r:"Second Round"},
+{y:2011,venue:"McKale Center",city:"Tucson",w:"San Diego State",ws:2,l:"Northern Colorado",ls:15,sc:"68-50",r:"First Round"},
+{y:2011,venue:"McKale Center",city:"Tucson",w:"San Diego State",ws:2,l:"Temple",ls:7,sc:"71-64",r:"Second Round"},
+{y:2011,venue:"McKale Center",city:"Tucson",w:"Wisconsin",ws:4,l:"Belmont",ls:13,sc:"72-58",r:"First Round"},
+{y:2011,venue:"McKale Center",city:"Tucson",w:"Wisconsin",ws:4,l:"Kansas State",ls:5,sc:"70-65",r:"Second Round"},
+{y:2011,venue:"McKale Center",city:"Tucson",w:"Kansas State",ws:5,l:"Utah State",ls:12,sc:"73-68",r:"First Round"},
+{y:2011,venue:"McKale Center",city:"Tucson",w:"Temple",ws:7,l:"Penn State",ls:10,sc:"66-64",r:"First Round"},
+{y:2010,venue:"HP Pavilion",city:"San Jose",w:"New Mexico",ws:3,l:"Montana",ls:14,sc:"62-57",r:"First Round"},
+{y:2010,venue:"HP Pavilion",city:"San Jose",w:"Butler",ws:5,l:"UTEP",ls:12,sc:"77-59",r:"First Round"},
+{y:2010,venue:"HP Pavilion",city:"San Jose",w:"Butler",ws:5,l:"Murray State",ls:13,sc:"54-52",r:"Second Round"},
+{y:2010,venue:"HP Pavilion",city:"San Jose",w:"Washington",ws:11,l:"Marquette",ls:6,sc:"80-78",r:"First Round"},
+{y:2010,venue:"HP Pavilion",city:"San Jose",w:"Washington",ws:11,l:"New Mexico",ls:3,sc:"82-64",r:"Second Round"},
+{y:2010,venue:"HP Pavilion",city:"San Jose",w:"Murray State",ws:13,l:"Vanderbilt",ls:4,sc:"66-65",r:"First Round"},
+{y:2009,venue:"American Airlines Arena",city:"Miami",w:"Syracuse",ws:3,l:"Stephen F. Austin",ls:14,sc:"59-44",r:"First Round"},
+{y:2009,venue:"American Airlines Arena",city:"Miami",w:"Syracuse",ws:3,l:"Arizona State",ls:6,sc:"78-67",r:"Second Round"},
+{y:2009,venue:"American Airlines Arena",city:"Miami",w:"Arizona State",ws:6,l:"Temple",ls:11,sc:"66-57",r:"First Round"},
+{y:2009,venue:"American Airlines Arena",city:"Miami",w:"Arizona",ws:12,l:"Utah",ls:5,sc:"84-71",r:"First Round"},
+{y:2009,venue:"American Airlines Arena",city:"Miami",w:"Arizona",ws:12,l:"Cleveland State",ls:13,sc:"71-57",r:"Second Round"},
+{y:2009,venue:"American Airlines Arena",city:"Miami",w:"Cleveland State",ws:13,l:"Wake Forest",ls:4,sc:"84-69",r:"First Round"},
+{y:2008,venue:"St. Pete Times Forum",city:"Tampa",w:"Vanderbilt",ws:4,l:"Siena",ls:13,sc:"83-62",r:"First Round"},
+{y:2008,venue:"St. Pete Times Forum",city:"Tampa",w:"UConn",ws:4,l:"San Diego",ls:13,sc:"70-69",r:"First Round"},
+{y:2008,venue:"St. Pete Times Forum",city:"Tampa",w:"Villanova",ws:12,l:"Clemson",ls:5,sc:"75-69",r:"First Round"},
+{y:2008,venue:"St. Pete Times Forum",city:"Tampa",w:"Villanova",ws:12,l:"Siena",ls:13,sc:"84-72",r:"Second Round"},
+{y:2008,venue:"St. Pete Times Forum",city:"Tampa",w:"Western Kentucky",ws:12,l:"Drake",ls:5,sc:"101-99",r:"First Round"},
+{y:2008,venue:"St. Pete Times Forum",city:"Tampa",w:"Western Kentucky",ws:12,l:"San Diego",ls:13,sc:"72-63",r:"Second Round"},
+{y:2007,venue:"ARCO Arena",city:"Sacramento",w:"UCLA",ws:2,l:"Weber State",ls:15,sc:"70-42",r:"First Round"},
+{y:2007,venue:"ARCO Arena",city:"Sacramento",w:"UCLA",ws:2,l:"Indiana",ls:7,sc:"54-49",r:"Second Round"},
+{y:2007,venue:"ARCO Arena",city:"Sacramento",w:"Washington State",ws:3,l:"Oral Roberts",ls:14,sc:"70-54",r:"First Round"},
+{y:2007,venue:"ARCO Arena",city:"Sacramento",w:"Vanderbilt",ws:6,l:"George Washington",ls:11,sc:"77-44",r:"First Round"},
+{y:2007,venue:"ARCO Arena",city:"Sacramento",w:"Vanderbilt",ws:6,l:"Washington State",ls:3,sc:"78-74",r:"Second Round"},
+{y:2007,venue:"ARCO Arena",city:"Sacramento",w:"Indiana",ws:7,l:"Gonzaga",ls:10,sc:"70-57",r:"First Round"},
+{y:2006,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Florida",ws:3,l:"South Alabama",ls:14,sc:"76-50",r:"First Round"},
+{y:2006,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Florida",ws:3,l:"Milwaukee",ls:11,sc:"82-60",r:"Second Round"},
+{y:2006,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"LSU",ws:4,l:"Iona",ls:13,sc:"80-64",r:"First Round"},
+{y:2006,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"LSU",ws:4,l:"Texas A&M",ls:12,sc:"58-57",r:"Second Round"},
+{y:2006,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Milwaukee",ws:11,l:"Oklahoma",ls:6,sc:"82-74",r:"First Round"},
+{y:2006,venue:"Veterans Memorial Arena",city:"Jacksonville",w:"Texas A&M",ws:12,l:"Syracuse",ls:5,sc:"66-58",r:"First Round"},
+{y:2005,venue:"McKale Center",city:"Tucson",w:"Gonzaga",ws:3,l:"Winthrop",ls:14,sc:"74-64",r:"First Round"},
+{y:2005,venue:"McKale Center",city:"Tucson",w:"Oklahoma",ws:3,l:"Niagara",ls:14,sc:"84-67",r:"First Round"},
+{y:2005,venue:"McKale Center",city:"Tucson",w:"Texas Tech",ws:6,l:"UCLA",ls:11,sc:"78-66",r:"First Round"},
+{y:2005,venue:"McKale Center",city:"Tucson",w:"Texas Tech",ws:6,l:"Gonzaga",ls:3,sc:"71-69",r:"Second Round"},
+{y:2005,venue:"McKale Center",city:"Tucson",w:"Utah",ws:6,l:"UTEP",ls:11,sc:"60-54",r:"First Round"},
+{y:2005,venue:"McKale Center",city:"Tucson",w:"Utah",ws:6,l:"Oklahoma",ls:3,sc:"67-58",r:"Second Round"},
+{y:2004,venue:"RBC Center",city:"Raleigh",w:"Duke",ws:1,l:"Alabama State",ls:16,sc:"96-61",r:"First Round"},
+{y:2004,venue:"RBC Center",city:"Raleigh",w:"Duke",ws:1,l:"Seton Hall",ls:8,sc:"90-62",r:"Second Round"},
+{y:2004,venue:"RBC Center",city:"Raleigh",w:"Wake Forest",ws:4,l:"VCU",ls:13,sc:"79-78",r:"First Round"},
+{y:2004,venue:"RBC Center",city:"Raleigh",w:"Wake Forest",ws:4,l:"Manhattan",ls:12,sc:"84-80",r:"Second Round"},
+{y:2004,venue:"RBC Center",city:"Raleigh",w:"Seton Hall",ws:8,l:"Arizona",ls:9,sc:"80-76",r:"First Round"},
+{y:2004,venue:"RBC Center",city:"Raleigh",w:"Manhattan",ws:12,l:"Florida",ls:5,sc:"75-60",r:"First Round"},
+{y:2003,venue:"St. Pete Times Forum",city:"Tampa",w:"Wake Forest",ws:2,l:"ETSU",ls:15,sc:"76-73",r:"First Round"},
+{y:2003,venue:"St. Pete Times Forum",city:"Tampa",w:"Florida",ws:2,l:"Sam Houston St.",ls:15,sc:"85-55",r:"First Round"},
+{y:2003,venue:"St. Pete Times Forum",city:"Tampa",w:"Michigan State",ws:7,l:"Colorado",ls:10,sc:"79-64",r:"First Round"},
+{y:2003,venue:"St. Pete Times Forum",city:"Tampa",w:"Michigan State",ws:7,l:"Florida",ls:2,sc:"68-46",r:"Second Round"},
+{y:2003,venue:"St. Pete Times Forum",city:"Tampa",w:"Auburn",ws:10,l:"Saint Joseph's",ls:7,sc:"65-63",r:"First Round"},
+{y:2003,venue:"St. Pete Times Forum",city:"Tampa",w:"Auburn",ws:10,l:"Wake Forest",ls:2,sc:"68-62",r:"Second Round"},
+{y:2002,venue:"The Pit",city:"Albuquerque",w:"Arizona",ws:3,l:"UC Santa Barbara",ls:14,sc:"86-81",r:"First Round"},
+{y:2002,venue:"The Pit",city:"Albuquerque",w:"Ohio State",ws:4,l:"Davidson",ls:13,sc:"69-64",r:"First Round"},
+{y:2002,venue:"The Pit",city:"Albuquerque",w:"Wyoming",ws:11,l:"Gonzaga",ls:6,sc:"73-66",r:"First Round"},
+{y:2002,venue:"The Pit",city:"Albuquerque",w:"Missouri",ws:12,l:"Miami (FL)",ls:5,sc:"93-80",r:"First Round"},
+{y:2002,venue:"The Pit",city:"Albuquerque",w:"Missouri",ws:12,l:"Ohio State",ls:4,sc:"83-67",r:"Second Round"},
+{y:2002,venue:"The Pit",city:"Albuquerque",w:"Arizona",ws:3,l:"Wyoming",ls:11,sc:"68-60",r:"Second Round"},
+{y:2001,venue:"Greensboro Coliseum",city:"Greensboro",w:"Duke",ws:1,l:"Monmouth",ls:16,sc:"95-52",r:"First Round"},
+{y:2001,venue:"Greensboro Coliseum",city:"Greensboro",w:"Duke",ws:1,l:"Missouri",ls:9,sc:"94-81",r:"Second Round"},
+{y:2001,venue:"Greensboro Coliseum",city:"Greensboro",w:"UCLA",ws:4,l:"Hofstra",ls:13,sc:"61-48",r:"First Round"},
+{y:2001,venue:"Greensboro Coliseum",city:"Greensboro",w:"UCLA",ws:4,l:"Utah State",ls:12,sc:"75-50",r:"Second Round"},
+{y:2001,venue:"Greensboro Coliseum",city:"Greensboro",w:"Missouri",ws:9,l:"Georgia",ls:8,sc:"70-68",r:"First Round"},
+{y:2001,venue:"Greensboro Coliseum",city:"Greensboro",w:"Utah State",ws:12,l:"Ohio State",ls:5,sc:"77-68",r:"First Round"},
+{y:2000,venue:"Lawrence Joel Coliseum",city:"Winston-Salem",w:"Duke",ws:1,l:"Lamar",ls:16,sc:"82-55",r:"First Round"},
+{y:2000,venue:"Lawrence Joel Coliseum",city:"Winston-Salem",w:"Duke",ws:1,l:"Kansas",ls:8,sc:"69-64",r:"Second Round"},
+{y:2000,venue:"Lawrence Joel Coliseum",city:"Winston-Salem",w:"Illinois",ws:4,l:"Penn",ls:13,sc:"68-58",r:"First Round"},
+{y:2000,venue:"Lawrence Joel Coliseum",city:"Winston-Salem",w:"Florida",ws:5,l:"Butler",ls:12,sc:"69-68",r:"First Round"},
+{y:2000,venue:"Lawrence Joel Coliseum",city:"Winston-Salem",w:"Florida",ws:5,l:"Illinois",ls:4,sc:"93-76",r:"Second Round"},
+{y:2000,venue:"Lawrence Joel Coliseum",city:"Winston-Salem",w:"Kansas",ws:8,l:"DePaul",ls:9,sc:"81-77",r:"First Round"},
+{y:1999,venue:"Charlotte Coliseum",city:"Charlotte",w:"Duke",ws:1,l:"Florida A&M",ls:16,sc:"99-58",r:"First Round"},
+{y:1999,venue:"Charlotte Coliseum",city:"Charlotte",w:"Duke",ws:1,l:"Tulsa",ls:9,sc:"97-56",r:"Second Round"},
+{y:1999,venue:"Charlotte Coliseum",city:"Charlotte",w:"Tennessee",ws:4,l:"Delaware",ls:13,sc:"62-52",r:"First Round"},
+{y:1999,venue:"Charlotte Coliseum",city:"Charlotte",w:"Tulsa",ws:9,l:"Coll. of Charleston",ls:8,sc:"62-53",r:"First Round"},
+{y:1999,venue:"Charlotte Coliseum",city:"Charlotte",w:"Missouri State",ws:12,l:"Wisconsin",ls:5,sc:"43-32",r:"First Round"},
+{y:1999,venue:"Charlotte Coliseum",city:"Charlotte",w:"Missouri State",ws:12,l:"Tennessee",ls:4,sc:"81-51",r:"Second Round"},
+{y:1998,venue:"MCI Center",city:"Washington DC",w:"UConn",ws:2,l:"FDU",ls:15,sc:"93-85",r:"First Round"},
+{y:1998,venue:"MCI Center",city:"Washington DC",w:"UConn",ws:2,l:"Indiana",ls:7,sc:"78-68",r:"Second Round"},
+{y:1998,venue:"MCI Center",city:"Washington DC",w:"Indiana",ws:7,l:"Oklahoma",ls:10,sc:"94-87",r:"First Round"},
+{y:1998,venue:"MCI Center",city:"Washington DC",w:"Washington",ws:11,l:"Xavier",ls:6,sc:"69-68",r:"First Round"},
+{y:1998,venue:"MCI Center",city:"Washington DC",w:"Washington",ws:11,l:"Richmond",ls:14,sc:"81-66",r:"Second Round"},
+{y:1998,venue:"MCI Center",city:"Washington DC",w:"Richmond",ws:14,l:"South Carolina",ls:3,sc:"62-61",r:"First Round"},
+{y:1997,venue:"Lawrence Joel V.M. Coliseum",city:"Winston-Salem",w:"North Carolina",ws:1,l:"Fairfield",ls:16,sc:"82-74",r:"First Round"},
+{y:1997,venue:"Lawrence Joel V.M. Coliseum",city:"Winston-Salem",w:"North Carolina",ws:1,l:"Colorado",ls:9,sc:"73-56",r:"Second Round"},
+{y:1997,venue:"Lawrence Joel V.M. Coliseum",city:"Winston-Salem",w:"Villanova",ws:4,l:"LIU",ls:13,sc:"101-91",r:"First Round"},
+{y:1997,venue:"Lawrence Joel V.M. Coliseum",city:"Winston-Salem",w:"California",ws:5,l:"Princeton",ls:12,sc:"55-52",r:"First Round"},
+{y:1997,venue:"Lawrence Joel V.M. Coliseum",city:"Winston-Salem",w:"California",ws:5,l:"Villanova",ls:4,sc:"75-68",r:"Second Round"},
+{y:1997,venue:"Lawrence Joel V.M. Coliseum",city:"Winston-Salem",w:"Colorado",ws:9,l:"Indiana",ls:8,sc:"80-62",r:"First Round"},
+{y:1996,venue:"Richmond Coliseum",city:"Richmond",w:"Georgetown",ws:2,l:"Miss. Valley St.",ls:15,sc:"93-56",r:"First Round"},
+{y:1996,venue:"Richmond Coliseum",city:"Richmond",w:"Georgetown",ws:2,l:"New Mexico",ls:7,sc:"73-62",r:"Second Round"},
+{y:1996,venue:"Richmond Coliseum",city:"Richmond",w:"Texas Tech",ws:3,l:"Northern Illinois",ls:14,sc:"74-73",r:"First Round"},
+{y:1996,venue:"Richmond Coliseum",city:"Richmond",w:"Texas Tech",ws:3,l:"North Carolina",ls:6,sc:"92-73",r:"Second Round"},
+{y:1996,venue:"Richmond Coliseum",city:"Richmond",w:"North Carolina",ws:6,l:"New Orleans",ls:11,sc:"83-62",r:"First Round"},
+{y:1996,venue:"Richmond Coliseum",city:"Richmond",w:"New Mexico",ws:7,l:"Kansas State",ls:10,sc:"69-48",r:"First Round"},
+{y:1995,venue:"Baltimore Arena",city:"Baltimore",w:"Wake Forest",ws:1,l:"N. Carolina A&T",ls:16,sc:"79-47",r:"First Round"},
+{y:1995,venue:"Baltimore Arena",city:"Baltimore",w:"Wake Forest",ws:1,l:"Saint Louis",ls:9,sc:"64-59",r:"Second Round"},
+{y:1995,venue:"Baltimore Arena",city:"Baltimore",w:"Oklahoma State",ws:4,l:"Drexel",ls:13,sc:"73-49",r:"First Round"},
+{y:1995,venue:"Baltimore Arena",city:"Baltimore",w:"Oklahoma State",ws:4,l:"Alabama",ls:5,sc:"66-52",r:"Second Round"},
+{y:1995,venue:"Baltimore Arena",city:"Baltimore",w:"Alabama",ws:5,l:"Penn",ls:12,sc:"91-85",r:"First Round"},
+{y:1995,venue:"Baltimore Arena",city:"Baltimore",w:"Saint Louis",ws:9,l:"Minnesota",ls:8,sc:"64-61",r:"First Round"},
+{y:1994,venue:"USAir Arena",city:"Landover",w:"North Carolina",ws:1,l:"Liberty",ls:16,sc:"71-51",r:"First Round"},
+{y:1994,venue:"USAir Arena",city:"Landover",w:"Temple",ws:4,l:"Drexel",ls:13,sc:"61-39",r:"First Round"},
+{y:1994,venue:"USAir Arena",city:"Landover",w:"Indiana",ws:5,l:"Ohio",ls:12,sc:"84-72",r:"First Round"},
+{y:1994,venue:"USAir Arena",city:"Landover",w:"Indiana",ws:5,l:"Temple",ls:4,sc:"67-58",r:"Second Round"},
+{y:1994,venue:"USAir Arena",city:"Landover",w:"Boston College",ws:9,l:"Washington State",ls:8,sc:"67-64",r:"First Round"},
+{y:1994,venue:"USAir Arena",city:"Landover",w:"Boston College",ws:9,l:"North Carolina",ls:1,sc:"75-72",r:"Second Round"},
+{y:1991,venue:"Cole Field House",city:"College Park",w:"Oklahoma State",ws:3,l:"New Mexico",ls:14,sc:"67-54",r:"First Round"},
+{y:1991,venue:"Cole Field House",city:"College Park",w:"NC State",ws:6,l:"Southern Miss",ls:11,sc:"114-85",r:"First Round"},
+{y:1991,venue:"Cole Field House",city:"College Park",w:"Oklahoma State",ws:3,l:"NC State",ls:6,sc:"73-64",r:"Second Round"},
+{y:1991,venue:"Cole Field House",city:"College Park",w:"Temple",ws:10,l:"Purdue",ls:7,sc:"80-63",r:"First Round"},
+{y:1991,venue:"Cole Field House",city:"College Park",w:"Temple",ws:10,l:"Richmond",ls:15,sc:"77-64",r:"Second Round"},
+{y:1991,venue:"Cole Field House",city:"College Park",w:"Richmond",ws:15,l:"Syracuse",ls:2,sc:"73-69",r:"First Round"},
+{y:1990,venue:"Richmond Coliseum",city:"Richmond",w:"Syracuse",ws:2,l:"Coppin State",ls:15,sc:"70-48",r:"First Round"},
+{y:1990,venue:"Richmond Coliseum",city:"Richmond",w:"Syracuse",ws:2,l:"Virginia",ls:7,sc:"63-61",r:"Second Round"},
+{y:1990,venue:"Richmond Coliseum",city:"Richmond",w:"Minnesota",ws:6,l:"UTEP",ls:11,sc:"64-61",r:"First Round"},
+{y:1990,venue:"Richmond Coliseum",city:"Richmond",w:"Minnesota",ws:6,l:"Northern Iowa",ls:14,sc:"81-78",r:"Second Round"},
+{y:1990,venue:"Richmond Coliseum",city:"Richmond",w:"Virginia",ws:7,l:"Notre Dame",ls:10,sc:"75-67",r:"First Round"},
+{y:1990,venue:"Richmond Coliseum",city:"Richmond",w:"Northern Iowa",ws:14,l:"Missouri",ls:3,sc:"74-71",r:"First Round"},
+];
+
+// Parse scores into numbers
+function parseScore(sc){const p=sc.split('-').map(Number);return{wPts:p[0],lPts:p[1],total:p[0]+p[1],margin:p[0]-p[1]}}
+games.forEach(g=>{const s=parseScore(g.sc);g.wPts=s.wPts;g.lPts=s.lPts;g.total=s.total;g.margin=s.margin});
+
+const facts=[
+{n:1,cat:"Cinderella Stories",t:"The 1991 pod at Cole Field House was the site of the first #15 over #2 seed upset in tournament history."},
+{n:2,cat:"Cinderella Stories",t:"The Richmond Spiders were the original 'Cinderella,' being the first #15 seed to advance by defeating Syracuse in 1991."},
+{n:3,cat:"Cinderella Stories",t:"In 1990, #14 Northern Iowa used a disciplined perimeter defense to upset #3 Missouri 74-71."},
+{n:4,cat:"Cinderella Stories",t:"The 1998 pod in Washington, DC, saw #14 Richmond disrupt the bracket again by defeating #3 South Carolina."},
+{n:5,cat:"Cinderella Stories",t:"In 2004, #12 Manhattan upset #5 Florida 75-60, leveraging a senior-heavy roster."},
+{n:6,cat:"Cinderella Stories",t:"The 2008 Tampa pod had four different double-digit seeds win their first-round games."},
+{n:7,cat:"Cinderella Stories",t:"In 2012, #13 Ohio reached the Sweet Sixteen after upsetting both #4 Michigan and #12 South Florida."},
+{n:8,cat:"Cinderella Stories",t:"#14 Georgia State shocked #3 Baylor in 2015, with a massive 29.9% turnover rate for Baylor."},
+{n:9,cat:"Cinderella Stories",t:"In 2016, #14 Stephen F. Austin upset #3 West Virginia using the Mountaineers' own pressure style against them."},
+{n:10,cat:"Cinderella Stories",t:"#13 Furman pulled off a miracle in 2023 by upsetting #4 Virginia on a last-second steal and score."},
+{n:11,cat:"Cinderella Stories",t:"#12 James Madison upset #5 Wisconsin 72-61 in the 2024 Brooklyn pod."},
+{n:12,cat:"Cinderella Stories",t:"In 2026, #5 St. John's defeated #4 Kansas on a buzzer-beating layup by Dylan Darling."},
+{n:13,cat:"Performance Milestones",t:"NC State scored 114 points in their 1991 first-round win over Southern Miss."},
+{n:14,cat:"Performance Milestones",t:"Richmond's Terry Connolly earned the nickname 'Super Sub' during the 1991 upset of Syracuse."},
+{n:15,cat:"Performance Milestones",t:"UNC's Jeff McInnis delivered 25 points and 11 assists in the 1996 first round."},
+{n:16,cat:"Performance Milestones",t:"The 1999 Missouri State vs Wisconsin game (43-32) remains the lowest-scoring game of the shot-clock era."},
+{n:17,cat:"Performance Milestones",t:"Mike Miller hit a critical buzzer-beater for Florida to survive an OT thriller against Butler in 2000."},
+{n:18,cat:"Performance Milestones",t:"LSU's Glen 'Big Baby' Davis dominated the 2006 Jacksonville pod with 22 points and 13 rebounds against Iona."},
+{n:19,cat:"Performance Milestones",t:"Vanderbilt's Derrick Byars scored 27 points in a double-OT win over Washington State in 2007."},
+{n:20,cat:"Performance Milestones",t:"Kawhi Leonard led San Diego State to their first-ever Sweet Sixteen during the 2011 Tucson pod."},
+{n:21,cat:"Performance Milestones",t:"In his 2022 debut, Chet Holmgren recorded 19 points, 17 rebounds, and 7 blocks for Gonzaga."},
+{n:22,cat:"Performance Milestones",t:"Florida's Scottie Wilbekin led a defensive effort in 2014 that held Pitt to 45 points."},
+{n:23,cat:"Performance Milestones",t:"The 2025 Raleigh pod featured Florida defeating the defending champion UConn 77-75."},
+{n:24,cat:"Performance Milestones",t:"Arizona's 2026 advancement was anchored by Koa Peat's double-double and Jaden Bradley's 18 points."},
+{n:25,cat:"Venue Insights",t:"The tournament officially implemented the 'pod system' in 2002 to keep top seeds closer to home."},
+{n:26,cat:"Venue Insights",t:"High-altitude venues like Albuquerque (2002) and Salt Lake City (2019) serve as natural equalizers."},
+{n:27,cat:"Venue Insights",t:"SEC and ACC teams see a 5.3% decrease in offensive rebounding at high altitude."},
+{n:28,cat:"Venue Insights",t:"The 'North Carolina Effect' gives Duke and UNC a 3-to-5-point advantage in their home state."},
+{n:29,cat:"Venue Insights",t:"Duke and UNC achieved a 100% first-round win rate across NC-based pods."},
+{n:30,cat:"Venue Insights",t:"The Richmond Coliseum was a staple of the early 90s, hosting in 1990 and 1996."},
+{n:31,cat:"Venue Insights",t:"The 2002 pod in Albuquerque was held at the famous 'The Pit.'"},
+{n:32,cat:"Venue Insights",t:"St. Pete Times Forum in Tampa was a 'neutral-site graveyard' for high-tempo teams in 2003."},
+{n:33,cat:"Venue Insights",t:"Brooklyn's Barclays Center has become a premier site for Big East programs."},
+{n:34,cat:"Venue Insights",t:"McKale Center in Tucson saw both #3 seeds eliminated in 2005."},
+{n:35,cat:"Venue Insights",t:"Orlando's Amway Center served as a stronghold for Florida during their 2014 run."},
+{n:36,cat:"Venue Insights",t:"Viejas Arena in San Diego hosted the 2026 pod with St. John's resurgence under Rick Pitino."},
+{n:37,cat:"Statistical Trends",t:"Second-round wins by 12+ points correlate with Final Four probability."},
+{n:38,cat:"Statistical Trends",t:"John Chaney's matchup zone at Temple was legendary for eliminating underdogs."},
+{n:39,cat:"Statistical Trends",t:"Bob Knight led Indiana and Texas Tech to key pod victories in 1994 and 2005."},
+{n:40,cat:"Statistical Trends",t:"Oklahoma State (1995) and Florida (2006) used early-round dominance to launch deep runs."},
+{n:41,cat:"Statistical Trends",t:"In 2003, Michigan State dismantled #2 Florida 68-46, winning the rebounding battle 30-22."},
+{n:42,cat:"Statistical Trends",t:"#7 Nevada completed one of the largest comebacks in 2018, erasing a 22-point deficit against Cincinnati."},
+{n:43,cat:"Statistical Trends",t:"By 2026, selection metrics shifted heavily toward NET and KenPom over traditional resumes."},
+{n:44,cat:"Statistical Trends",t:"Auburn utilized the thin air of Salt Lake City in 2019 to tire out Kansas with fast-break attack."},
+{n:45,cat:"Statistical Trends",t:"Florida's 2000 squad reached the national title game despite needing an OT buzzer-beater to survive round one."},
+{n:46,cat:"Statistical Trends",t:"In 2017, #4 Florida held #5 Virginia to just 39 points in a defensive masterpiece."},
+{n:47,cat:"Statistical Trends",t:"#11 Xavier reached the Elite Eight in 2017 after winning its pod in Orlando."},
+{n:48,cat:"Statistical Trends",t:"In 2025, Florida under Todd Golden won the national title after starting in Raleigh."},
+{n:49,cat:"Statistical Trends",t:"UConn's 2024 title defense began with a 39-point blowout of Stetson in Brooklyn."},
+{n:50,cat:"Statistical Trends",t:"Big 12 teams faced significant attrition playing in Western sites during the 2026 tournament."},
+];
+
+const erasData=[
+{name:"Traditional Regional Format",years:"1990-1991",desc:"Regionalized brackets with limited travel considerations. The era of Richmond's historic #15 upset.",gameYears:[1990,1991]},
+{name:"Defensive Dominance",years:"1994-1996",desc:"Physical, low-scoring battles defined this era. Boston College stuns #1 UNC. Texas Tech outpaces the ACC.",gameYears:[1994,1995,1996]},
+{name:"Geographic Strongholds",years:"1997-2001",desc:"Top seeds placed near home regions. Duke dominates in North Carolina. The 'home-court effect' becomes measurable.",gameYears:[1997,1998,1999,2000,2001]},
+{name:"Modern Pod System",years:"2002-2004",desc:"The pod system debuts. Altitude becomes a factor in Albuquerque. ACC geographic advantage crystallizes.",gameYears:[2002,2003,2004]},
+{name:"Expansion & Chaos",years:"2005-2011",desc:"Western sites introduce new variables. The 2008 Tampa pod produces 4 double-digit seed wins. Butler begins its rise.",gameYears:[2005,2006,2007,2008,2009,2010,2011]},
+{name:"Peak Parity",years:"2012-2019",desc:"The most chaotic era. Ohio's #13 run. Nashville 2018 eliminates both top seeds. Mid-majors reach new tactical heights.",gameYears:[2012,2013,2014,2015,2016,2017,2018,2019]},
+{name:"Modern Tournament",years:"2022-2026",desc:"Efficiency metrics reshape selection. UConn's dynasty. Furman's miracle. St. John's resurgence under Pitino.",gameYears:[2022,2023,2024,2025,2026]},
+];
+
+// City lat/lon for D3 projection
+const cityLatLon={
+"Richmond":[-77.436,37.541],"College Park":[-76.936,38.981],"Landover":[-76.886,38.934],
+"Baltimore":[-76.612,39.290],"Winston-Salem":[-80.244,36.100],"Washington DC":[-77.037,38.907],
+"Charlotte":[-80.843,35.227],"Greensboro":[-79.792,36.073],"Albuquerque":[-106.651,35.084],
+"Tampa":[-82.458,27.951],"Raleigh":[-78.638,35.780],"Tucson":[-110.975,32.222],
+"Jacksonville":[-81.656,30.332],"Sacramento":[-121.494,38.582],"Miami":[-80.191,25.762],
+"San Jose":[-121.887,37.338],"Nashville":[-86.784,36.163],"Austin":[-97.743,30.267],
+"Orlando":[-81.379,28.538],"Salt Lake City":[-111.891,40.761],"Portland":[-122.676,45.523],
+"Brooklyn":[-73.950,40.650],"San Diego":[-117.161,32.716],
+};
+
+// ===== COUNTERS =====
+const cObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){animateCounters();cObserver.disconnect()}})
+},{threshold:0.5});
+document.querySelectorAll('.hero-stat .num').forEach(el=>cObserver.observe(el));
+function animateCounters(){
+  document.querySelectorAll('.hero-stat .num').forEach(el=>{
+    const t=+el.dataset.target;let c=0;const s=Math.max(1,Math.floor(t/40));
+    const iv=setInterval(()=>{c+=s;if(c>=t){c=t;clearInterval(iv)}el.textContent=c},30);
+  });
+}
+
+// ===== NAV + BACK TO TOP =====
+window.addEventListener('scroll',()=>{
+  const s=window.scrollY;const vh=window.innerHeight;
+  document.getElementById('nav').classList.toggle('visible',s>vh*0.7);
+  document.getElementById('backToTop').classList.toggle('visible',s>vh*1.5);
+});
+
+// ===== MAP (D3 + TopoJSON) =====
+(function(){
+  const tooltip=document.getElementById('mapTooltip');
+  const container=document.getElementById('mapContainer');
+  const w=975,h=610;
+  const svg=d3.select(container).append('svg').attr('viewBox',`0 0 ${w} ${h}`);
+  const path=d3.geoPath();
+  const projection=d3.geoAlbersUsa().scale(1300).translate([w/2,h/2]);
+
+  const cityYears={};
+  games.forEach(g=>{
+    if(!cityYears[g.city])cityYears[g.city]={years:new Set(),venues:new Set()};
+    cityYears[g.city].years.add(g.y);cityYears[g.city].venues.add(g.venue);
+  });
+
+  d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json').then(us=>{
+    // Draw states
+    svg.append('g').selectAll('path')
+      .data(topojson.feature(us,us.objects.states).features)
+      .join('path').attr('class','state').attr('d',d3.geoPath());
+
+    // State borders
+    svg.append('path').attr('class','state-border')
+      .attr('d',d3.geoPath()(topojson.mesh(us,us.objects.states,(a,b)=>a!==b)));
+
+    // City dots
+    const dotsG=svg.append('g');
+    Object.entries(cityLatLon).forEach(([city,lonlat])=>{
+      const info=cityYears[city];if(!info)return;
+      const projected=projection(lonlat);if(!projected)return;
+      const [cx,cy]=projected;
+      const multi=info.years.size>1;
+
+      const g=dotsG.append('g').attr('class','map-dot'+(multi?' multi':''));
+      g.append('circle').attr('class','outer').attr('cx',cx).attr('cy',cy).attr('r',multi?12:9);
+      g.append('circle').attr('class','inner').attr('cx',cx).attr('cy',cy).attr('r',multi?5:3.5);
+
+      g.on('mouseenter',function(event){
+        const yrs=[...info.years].sort().join(', ');
+        const vns=[...info.venues].join(' / ');
+        tooltip.innerHTML=`<div class="tt-city">${city}</div><div class="tt-years">${yrs}</div><div class="tt-venue">${vns}</div>`;
+        tooltip.style.opacity='1';
+        const svgRect=container.querySelector('svg').getBoundingClientRect();
+        const scX=svgRect.width/w;const scY=svgRect.height/h;
+        tooltip.style.left=(cx*scX - tooltip.offsetWidth/2)+'px';
+        tooltip.style.top=(cy*scY - tooltip.offsetHeight-15)+'px';
+      });
+      g.on('mouseleave',()=>{tooltip.style.opacity='0'});
+    });
+  });
+})();
+
+// ===== TIMELINE =====
+(function(){
+  const track=document.getElementById('timelineTrack');
+  const detail=document.getElementById('yearDetail');
+  const years=[...new Set(games.map(g=>g.y))].sort((a,b)=>a-b);
+  years.forEach(year=>{
+    const yGames=games.filter(g=>g.y===year);
+    const city=yGames[0].city;
+    const card=document.createElement('div');
+    card.className='year-card';
+    card.innerHTML=`<div class="yc-year">${year}</div><div class="yc-city">${city}</div>`;
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.year-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');showYearDetail(year,yGames);
+    });
+    track.appendChild(card);
+  });
+  function showYearDetail(year,yGames){
+    const venue=yGames[0].venue;const city=yGames[0].city;
+    const totalPts=yGames.reduce((s,g)=>s+g.total,0);
+    const avgTotal=Math.round(totalPts/yGames.length);
+    const avgMargin=Math.round(yGames.reduce((s,g)=>s+g.margin,0)/yGames.length*10)/10;
+    const closest=Math.min(...yGames.map(g=>g.margin));
+    const highest=Math.max(...yGames.map(g=>g.total));
+    const upsetCount=yGames.filter(g=>g.ws>g.ls).length;
+    let html=`<h3>${year} &mdash; ${city}</h3><div class="yd-venue">${venue}</div>`;
+    html+=`<div class="yd-stats">
+      <div class="yd-stat"><span class="ys-val">${totalPts}</span><span class="ys-lbl">Total Points</span></div>
+      <div class="yd-stat"><span class="ys-val">${avgTotal}</span><span class="ys-lbl">Avg Combined</span></div>
+      <div class="yd-stat"><span class="ys-val">${avgMargin}</span><span class="ys-lbl">Avg Margin</span></div>
+      <div class="yd-stat"><span class="ys-val">${closest}</span><span class="ys-lbl">Closest Game</span></div>
+      <div class="yd-stat"><span class="ys-val">${highest}</span><span class="ys-lbl">Highest Scoring</span></div>
+      <div class="yd-stat"><span class="ys-val">${upsetCount}</span><span class="ys-lbl">Upsets</span></div>
+    </div>`;
+    const sorted=[...yGames].sort((a,b)=>({'First Round':0,'Second Round':1}[a.r]||0)-({'First Round':0,'Second Round':1}[b.r]||0));
+    sorted.forEach(g=>{
+      const isUpset=g.ws>g.ls;
+      html+=`<div class="game-row${isUpset?' upset':''}">
+        <div class="game-winner"><span class="game-team">${g.w}</span><span class="game-seed">#${g.ws}</span>${isUpset?'<span class="upset-badge">UPSET</span>':''}</div>
+        <div class="game-center"><div class="game-score mono">${g.sc}</div><div class="game-round">${g.r}</div><div class="game-margin mono">+${g.margin} &bull; ${g.total} pts</div></div>
+        <div class="game-loser"><span class="game-seed">#${g.ls}</span><span class="game-team">${g.l}</span></div>
+      </div>`;
+    });
+    detail.innerHTML=html;detail.classList.add('show');
+    detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+})();
+
+// ===== UPSETS =====
+(function(){
+  const grid=document.getElementById('upsetsGrid');
+  const upsets=games.filter(g=>g.ws>g.ls).map(g=>({...g,diff:g.ws-g.ls})).sort((a,b)=>b.diff-a.diff);
+  upsets.slice(0,12).forEach(u=>{
+    const card=document.createElement('div');card.className='upset-card';
+    card.innerHTML=`<div class="uc-year mono">${u.y} &mdash; ${u.city}</div>
+      <div class="uc-matchup">#${u.ws} ${u.w} over #${u.ls} ${u.l}</div>
+      <div class="uc-detail">${u.sc} &bull; ${u.r} &bull; Margin: ${u.margin}</div>
+      <div class="uc-diff">+${u.diff}</div>`;
+    grid.appendChild(card);
+  });
+})();
+
+// ===== TOURNAMENT PEDIGREE =====
+(function(){
+  // Champions by year
+  const champions={
+    1990:"UNLV",1991:"Duke",1994:"Arkansas",1995:"UCLA",1996:"Kentucky",
+    1997:"Arizona",1998:"Kentucky",1999:"UConn",2000:"Michigan State",
+    2001:"Duke",2002:"Maryland",2003:"Syracuse",2004:"UConn",2005:"UNC",
+    2006:"Florida",2007:"Florida",2008:"Kansas",2009:"UNC",2010:"Duke",
+    2011:"UConn",2012:"Kentucky",2013:"Louisville",2014:"UConn",
+    2015:"Duke",2016:"Villanova",2017:"UNC",2018:"Villanova",
+    2019:"Virginia",2022:"Kansas",2023:"UConn",2024:"UConn",2025:"Florida"
+  };
+  // Final Four teams by year
+  const finalFours={
+    1990:["UNLV","Duke","Georgia Tech","Arkansas"],
+    1991:["Duke","Kansas","UNLV","North Carolina"],
+    1994:["Arkansas","Arizona","Duke","Florida"],
+    1995:["UCLA","Oklahoma State","North Carolina","Arkansas"],
+    1996:["Kentucky","Syracuse","UMass","Mississippi State"],
+    1997:["Arizona","Kentucky","Minnesota","North Carolina"],
+    1998:["Kentucky","Utah","North Carolina","Stanford"],
+    1999:["UConn","Duke","Michigan State","Ohio State"],
+    2000:["Michigan State","Wisconsin","North Carolina","Florida"],
+    2001:["Duke","Maryland","Michigan State","Arizona"],
+    2002:["Maryland","Kansas","Indiana","Oklahoma"],
+    2003:["Syracuse","Kansas","Marquette","Texas"],
+    2004:["UConn","Duke","Georgia Tech","Oklahoma State"],
+    2005:["UNC","Louisville","Michigan State","Illinois"],
+    2006:["Florida","UCLA","George Mason","LSU"],
+    2007:["Florida","Ohio State","Georgetown","UCLA"],
+    2008:["Kansas","North Carolina","Memphis","UCLA"],
+    2009:["UNC","Michigan State","Villanova","UConn"],
+    2010:["Duke","Butler","Michigan State","West Virginia"],
+    2011:["UConn","Kentucky","Butler","VCU"],
+    2012:["Kentucky","Kansas","Louisville","Ohio State"],
+    2013:["Louisville","Michigan","Wichita State","Syracuse"],
+    2014:["UConn","Florida","Kentucky","Wisconsin"],
+    2015:["Duke","Kentucky","Michigan State","Wisconsin"],
+    2016:["Villanova","North Carolina","Oklahoma","Syracuse"],
+    2017:["North Carolina","Gonzaga","South Carolina","Oregon"],
+    2018:["Villanova","Kansas","Michigan","Loyola Chicago"],
+    2019:["Virginia","Auburn","Michigan State","Texas Tech"],
+    2022:["Kansas","Duke","Villanova","North Carolina"],
+    2023:["UConn","San Diego State","Miami (FL)","FAU"],
+    2024:["UConn","Purdue","Alabama","NC State"],
+    2025:["Florida","Duke","Auburn","Houston"],
+  };
+
+  // Build set of teams seen per year
+  const teamsSeenByYear={};
+  games.forEach(g=>{
+    if(!teamsSeenByYear[g.y])teamsSeenByYear[g.y]=new Set();
+    teamsSeenByYear[g.y].add(g.w);
+    teamsSeenByYear[g.y].add(g.l);
+  });
+
+  // Find champions seen
+  const champsSeen=[];
+  Object.entries(champions).forEach(([yr,champ])=>{
+    const y=+yr;
+    if(teamsSeenByYear[y]&&teamsSeenByYear[y].has(champ)){
+      champsSeen.push({year:y,team:champ,city:games.find(g=>g.y===y).city});
+    }
+  });
+
+  // Find Final Four teams seen
+  const ffSeen=[];
+  Object.entries(finalFours).forEach(([yr,teams])=>{
+    const y=+yr;
+    if(!teamsSeenByYear[y])return;
+    teams.forEach(team=>{
+      if(teamsSeenByYear[y].has(team)){
+        const isChamp=champions[y]===team;
+        if(!isChamp){ // avoid duplicating champions
+          ffSeen.push({year:y,team,city:games.find(g=>g.y===y).city});
+        }
+      }
+    });
+  });
+
+  // Regional analysis
+  const regionMap={
+    "Northeast":["Brooklyn","College Park","Landover","Baltimore","Washington DC"],
+    "Southeast":["Richmond","Winston-Salem","Charlotte","Greensboro","Raleigh","Jacksonville","Orlando","Tampa","Miami","Nashville"],
+    "Southwest":["Tucson","Albuquerque","Austin","San Diego"],
+    "West":["Portland","Sacramento","San Jose","Salt Lake City"],
+  };
+  const regionTrips={};const regionGames={};
+  Object.entries(regionMap).forEach(([r,cities])=>{regionTrips[r]=new Set();regionGames[r]=0});
+  games.forEach(g=>{
+    Object.entries(regionMap).forEach(([r,cities])=>{
+      if(cities.includes(g.city)){regionTrips[r].add(g.y);regionGames[r]++}
+    });
+  });
+
+  // Render hero stats
+  const heroDiv=document.getElementById('pedigreeHero');
+  const totalFF=champsSeen.length+ffSeen.length;
+  heroDiv.innerHTML=`
+    <div class="ped-big-stat"><span class="pbs-val">${champsSeen.length}</span><span class="pbs-lbl">Champions Witnessed</span></div>
+    <div class="ped-big-stat"><span class="pbs-val">${totalFF}</span><span class="pbs-lbl">Final Four Teams Seen</span></div>
+    <div class="ped-big-stat"><span class="pbs-val">${Math.round((champsSeen.length+ffSeen.length)/Object.keys(teamsSeenByYear).length*100)}%</span><span class="pbs-lbl">Years Seeing FF Team</span></div>
+  `;
+
+  // Render panels
+  const grid=document.getElementById('pedigreeGrid');
+
+  // Champions panel
+  let h1=`<div class="hl-panel"><h4>Champions We Watched</h4>`;
+  if(champsSeen.length===0)h1+=`<div class="hl-item"><span class="hl-teams">None yet!</span></div>`;
+  champsSeen.forEach(c=>{
+    h1+=`<div class="hl-item"><div><div class="hl-teams">${c.team}<span class="champ-badge">Champion</span></div><div class="hl-sub">${c.year} &bull; ${c.city}</div></div><div class="hl-val">Won it all</div></div>`;
+  });
+  h1+=`</div>`;
+
+  // Final Four panel
+  let h2=`<div class="hl-panel"><h4>Final Four Teams We Watched</h4>`;
+  const allFF=[...champsSeen.map(c=>({...c,champ:true})),...ffSeen.map(f=>({...f,champ:false}))].sort((a,b)=>a.year-b.year);
+  allFF.forEach(f=>{
+    h2+=`<div class="hl-item"><div><div class="hl-teams">${f.team}${f.champ?'<span class="champ-badge">Champion</span>':'<span class="ff-badge">Final Four</span>'}</div><div class="hl-sub">${f.year} &bull; ${f.city}</div></div><div class="hl-val">${f.year}</div></div>`;
+  });
+  h2+=`</div>`;
+
+  // Most seen teams (enhanced with badges)
+  const teamCounts={};
+  games.forEach(g=>{teamCounts[g.w]=(teamCounts[g.w]||0)+1;teamCounts[g.l]=(teamCounts[g.l]||0)+1});
+  const topTeams=Object.entries(teamCounts).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  let h3=`<div class="hl-panel"><h4>Most Seen Teams</h4>`;
+  topTeams.forEach(([name,count])=>{
+    // Check if this team was ever a champion or FF in a year we saw them
+    let badges='';
+    Object.entries(champions).forEach(([yr,ch])=>{if(ch===name&&teamsSeenByYear[+yr]&&teamsSeenByYear[+yr].has(name))badges+=' <span class="champ-badge">\''+yr.slice(2)+'</span>'});
+    h3+=`<div class="hl-item"><div><div class="hl-teams">${name}${badges}</div></div><div class="hl-val">${count} games</div></div>`;
+  });
+  h3+=`</div>`;
+
+  // Regional analysis
+  const colors={"Northeast":"#4a90d9","Southeast":"#e8843a","Southwest":"#c0392b","West":"#2d8a4e"};
+  const maxRG=Math.max(...Object.values(regionGames));
+  let h4=`<div class="hl-panel"><h4>Regional Analysis</h4>`;
+  Object.entries(regionMap).forEach(([region,cities])=>{
+    const trips=regionTrips[region].size;
+    const gms=regionGames[region];
+    const pct=Math.round(gms/games.length*100);
+    h4+=`<div class="region-bar-wrap">
+      <div class="region-bar-label"><span>${region}</span><span>${trips} trips &bull; ${gms} games (${pct}%)</span></div>
+      <div class="region-bar-track"><div class="region-bar-fill" style="width:${gms/maxRG*100}%;background:${colors[region]}"></div></div>
+    </div>`;
+  });
+  const citiesByRegion=Object.entries(regionMap).map(([r,c])=>{
+    const visited=c.filter(city=>games.some(g=>g.city===city));
+    return `<div style="margin-top:0.5rem"><span style="font-family:Oswald;font-size:0.65rem;letter-spacing:0.15em;color:${colors[r]};text-transform:uppercase">${r}:</span> <span style="font-size:0.75rem;color:var(--text3)">${visited.join(', ')}</span></div>`;
+  }).join('');
+  h4+=citiesByRegion+`</div>`;
+
+  grid.innerHTML=h1+h2+h3+h4;
+})();
+
+// ===== GAME HIGHLIGHTS =====
+(function(){
+  const grid=document.getElementById('highlightsGrid');
+  const sorted=g=>[...games].sort(g);
+
+  // Highest scoring
+  const highest=sorted((a,b)=>b.total-a.total).slice(0,8);
+  let h1=`<div class="hl-panel"><h4>Highest-Scoring Games</h4>`;
+  highest.forEach(g=>{h1+=`<div class="hl-item"><div><div class="hl-teams">${g.w} vs ${g.l}</div><div class="hl-sub">${g.y} ${g.city} &bull; ${g.r}</div></div><div class="hl-val">${g.sc} (${g.total} pts)</div></div>`});
+  h1+=`</div>`;
+
+  // Lowest scoring
+  const lowest=sorted((a,b)=>a.total-b.total).slice(0,8);
+  let h2=`<div class="hl-panel"><h4>Lowest-Scoring Games</h4>`;
+  lowest.forEach(g=>{h2+=`<div class="hl-item"><div><div class="hl-teams">${g.w} vs ${g.l}</div><div class="hl-sub">${g.y} ${g.city} &bull; ${g.r}</div></div><div class="hl-val">${g.sc} (${g.total} pts)</div></div>`});
+  h2+=`</div>`;
+
+  // Closest games
+  const closest=sorted((a,b)=>a.margin-b.margin).slice(0,8);
+  let h3=`<div class="hl-panel"><h4>Closest Finishes</h4>`;
+  closest.forEach(g=>{h3+=`<div class="hl-item"><div><div class="hl-teams">${g.w} vs ${g.l}</div><div class="hl-sub">${g.y} ${g.city} &bull; ${g.r}</div></div><div class="hl-val">${g.sc} (+${g.margin})</div></div>`});
+  h3+=`</div>`;
+
+  // Biggest blowouts
+  const blowouts=sorted((a,b)=>b.margin-a.margin).slice(0,8);
+  let h4=`<div class="hl-panel"><h4>Biggest Blowouts</h4>`;
+  blowouts.forEach(g=>{h4+=`<div class="hl-item"><div><div class="hl-teams">${g.w} vs ${g.l}</div><div class="hl-sub">${g.y} ${g.city} &bull; ${g.r}</div></div><div class="hl-val">${g.sc} (+${g.margin})</div></div>`});
+  h4+=`</div>`;
+
+  // Avg combined score by era
+  let h5=`<div class="hl-panel"><h4>Avg Combined Score by Era</h4>`;
+  erasData.forEach(era=>{
+    const eg=games.filter(g=>era.gameYears.includes(g.y));
+    if(!eg.length)return;
+    const avg=Math.round(eg.reduce((s,g)=>s+g.total,0)/eg.length*10)/10;
+    const avgM=Math.round(eg.reduce((s,g)=>s+g.margin,0)/eg.length*10)/10;
+    h5+=`<div class="hl-item"><div><div class="hl-teams">${era.name}</div><div class="hl-sub">${era.years}</div></div><div class="hl-val">${avg} pts / +${avgM} margin</div></div>`;
+  });
+  h5+=`</div>`;
+
+  // Winner points distribution
+  const avgWin=Math.round(games.reduce((s,g)=>s+g.wPts,0)/games.length*10)/10;
+  const avgLose=Math.round(games.reduce((s,g)=>s+g.lPts,0)/games.length*10)/10;
+  const avgMarg=Math.round(games.reduce((s,g)=>s+g.margin,0)/games.length*10)/10;
+  const totalAllPts=games.reduce((s,g)=>s+g.total,0);
+  let h6=`<div class="hl-panel"><h4>Scoring Overview</h4>`;
+  h6+=`<div class="hl-item"><span class="hl-teams">Total Points Witnessed</span><span class="hl-val">${totalAllPts.toLocaleString()}</span></div>`;
+  h6+=`<div class="hl-item"><span class="hl-teams">Avg Winner Score</span><span class="hl-val">${avgWin}</span></div>`;
+  h6+=`<div class="hl-item"><span class="hl-teams">Avg Loser Score</span><span class="hl-val">${avgLose}</span></div>`;
+  h6+=`<div class="hl-item"><span class="hl-teams">Avg Margin of Victory</span><span class="hl-val">+${avgMarg}</span></div>`;
+  h6+=`<div class="hl-item"><span class="hl-teams">Games Decided by 3 or Fewer</span><span class="hl-val">${games.filter(g=>g.margin<=3).length}</span></div>`;
+  h6+=`<div class="hl-item"><span class="hl-teams">Blowouts (25+ margin)</span><span class="hl-val">${games.filter(g=>g.margin>=25).length}</span></div>`;
+  h6+=`</div>`;
+
+  grid.innerHTML=h1+h2+h3+h4+h5+h6;
+})();
+
+// ===== FACTS =====
+(function(){
+  const cats=[...new Set(facts.map(f=>f.cat))];
+  const catsDiv=document.getElementById('factsCats');
+  const carousel=document.getElementById('factsCarousel');
+  let activeCat='All';
+  const allBtn=document.createElement('button');allBtn.className='facts-cat-btn active';allBtn.textContent='All';
+  allBtn.addEventListener('click',()=>{activeCat='All';renderFacts();updateBtns()});
+  catsDiv.appendChild(allBtn);
+  cats.forEach(cat=>{
+    const btn=document.createElement('button');btn.className='facts-cat-btn';btn.textContent=cat;
+    btn.addEventListener('click',()=>{activeCat=cat;renderFacts();updateBtns()});
+    catsDiv.appendChild(btn);
+  });
+  function updateBtns(){document.querySelectorAll('.facts-cat-btn').forEach(b=>b.classList.toggle('active',b.textContent===activeCat))}
+  function renderFacts(){
+    const filtered=activeCat==='All'?facts:facts.filter(f=>f.cat===activeCat);
+    carousel.innerHTML='';
+    filtered.forEach(f=>{
+      const card=document.createElement('div');card.className='fact-card';
+      card.innerHTML=`<div class="fc-num">${f.n}</div><div class="fc-cat">${f.cat}</div><div class="fc-text">${f.t}</div>`;
+      carousel.appendChild(card);
+    });
+  }
+  renderFacts();
+
+  // Auto-advance carousel
+  let autoScroll=setInterval(()=>{
+    if(!carousel.matches(':hover')){
+      carousel.scrollBy({left:350,behavior:'smooth'});
+      if(carousel.scrollLeft+carousel.clientWidth>=carousel.scrollWidth-50){
+        carousel.scrollTo({left:0,behavior:'smooth'});
+      }
+    }
+  },4000);
+})();
+
+// ===== STATS =====
+(function(){
+  const grid=document.getElementById('statsGrid');
+  const teamCounts={};
+  games.forEach(g=>{teamCounts[g.w]=(teamCounts[g.w]||0)+1;teamCounts[g.l]=(teamCounts[g.l]||0)+1});
+  const topTeams=Object.entries(teamCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const maxT=topTeams[0][1];
+  let t1=`<div class="stat-panel"><h4>Most Seen Teams</h4>`;
+  topTeams.forEach(([n,c])=>{t1+=`<div class="stat-bar"><span class="sb-label">${n}</span><div class="sb-track"><div class="sb-fill" style="width:${c/maxT*100}%"></div></div><span class="sb-val mono">${c}</span></div>`});
+  t1+=`</div>`;
+
+  const cityCounts={};
+  games.forEach(g=>{cityCounts[g.city]=(cityCounts[g.city]||0)+1});
+  const topC=Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const maxC=topC[0][1];
+  let t2=`<div class="stat-panel"><h4>Games by City</h4>`;
+  topC.forEach(([n,c])=>{t2+=`<div class="stat-bar"><span class="sb-label">${n}</span><div class="sb-track"><div class="sb-fill" style="width:${c/maxC*100}%"></div></div><span class="sb-val mono">${c}</span></div>`});
+  t2+=`</div>`;
+
+  const seedW={},seedTot={};
+  for(let i=1;i<=16;i++){seedW[i]=0;seedTot[i]=0}
+  games.forEach(g=>{seedTot[g.ws]++;seedTot[g.ls]++;seedW[g.ws]++});
+  let t3=`<div class="stat-panel"><h4>Win Rate by Seed</h4>`;
+  for(let i=1;i<=16;i++){if(!seedTot[i])continue;const r=Math.round(seedW[i]/seedTot[i]*100);t3+=`<div class="stat-bar"><span class="sb-label">#${i} seed</span><div class="sb-track"><div class="sb-fill" style="width:${r}%"></div></div><span class="sb-val mono">${r}%</span></div>`}
+  t3+=`</div>`;
+
+  let t4=`<div class="stat-panel"><h4>Games per Era</h4>`;
+  erasData.forEach(e=>{const c=games.filter(g=>e.gameYears.includes(g.y)).length;t4+=`<div class="stat-list-item"><span class="sli-name">${e.name}</span><span class="sli-val">${c} games</span></div>`});
+  t4+=`</div>`;
+
+  grid.innerHTML=t1+t2+t3+t4;
+  const sObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.sb-fill').forEach(b=>{const w=b.style.width;b.style.width='0';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=w))});sObs.unobserve(e.target)}})},{threshold:0.2});
+  document.querySelectorAll('.stat-panel').forEach(p=>sObs.observe(p));
+})();
+
+// ===== ERAS =====
+(function(){
+  const tl=document.getElementById('erasTimeline');
+  erasData.forEach((era,i)=>{
+    const eg=games.filter(g=>era.gameYears.includes(g.y));
+    const avg=eg.length?Math.round(eg.reduce((s,g)=>s+g.total,0)/eg.length):0;
+    const row=document.createElement('div');row.className='era-row';
+    row.innerHTML=`<div class="era-dates mono">${era.years}</div>
+      <div class="era-content"><h4>Era ${i+1}: ${era.name}</h4><p>${era.desc}</p>
+      <div class="era-games-count mono">${era.gameYears.length} pods &bull; ${eg.length} games &bull; ${avg} avg pts/game</div></div>`;
+    tl.appendChild(row);
+  });
+})();
+
+// Fade-in
+const fObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';fObs.unobserve(e.target)}})},{threshold:0.1});
+document.querySelectorAll('.section-head,.stat-panel,.upset-card,.era-row,.hl-panel,.ped-big-stat').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(20px)';el.style.transition='opacity 0.6s ease, transform 0.6s ease';
+  fObs.observe(el);
+});
+</script>
+</body>
+</html>

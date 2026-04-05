@@ -462,9 +462,9 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
   .nav::-webkit-scrollbar{display:none}
   .nav a{font-size:0.55rem;padding:0.75rem 0.7rem;white-space:nowrap;flex-shrink:0}
 
-  /* Hero stats: primary full-width, 3 secondaries in a row */
+  /* Hero stats: primary full-width, 4 secondaries in 2x2 */
   .hero-stats{
-    display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;
+    display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;
     max-width:340px;width:100%;
   }
   .hero-stat{padding:0.7rem 0.4rem}
@@ -472,8 +472,8 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
     grid-column:1/-1;padding:1.2rem 1rem;margin-bottom:0.25rem;
   }
   .hero-stat.primary .num{font-size:3rem}
-  .hero-stat.secondary .num{font-size:1.6rem}
-  .hero-stat .lbl{font-size:0.45rem;letter-spacing:0.12em}
+  .hero-stat.secondary .num{font-size:1.4rem}
+  .hero-stat .lbl{font-size:0.42rem;letter-spacing:0.1em}
   .hero-stat .lbl::before{width:3px;height:3px;margin-right:4px}
 
   /* Sections */
@@ -553,10 +553,11 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
   <h1>The Jez Family<span>March Madness Tradition</span></h1>
   <p class="hero-sub">33 years of first and second round tournament basketball, coast to coast.</p>
   <div class="hero-stats">
-    <div class="hero-stat primary"><span class="num" data-target="198">0</span><span class="lbl">Games Witnessed</span></div>
-    <div class="hero-stat secondary"><span class="num" data-target="33">0</span><span class="lbl">Years</span></div>
+    <div class="hero-stat primary"><span class="num" data-target="33">0</span><span class="lbl">Years</span></div>
+    <div class="hero-stat secondary"><span class="num" data-target="198">0</span><span class="lbl">Games</span></div>
+    <div class="hero-stat secondary"><span class="num" data-target="59">0</span><span class="lbl">Upsets Witnessed</span></div>
+    <div class="hero-stat secondary"><span class="num" data-target="7920">0</span><span class="lbl">Minutes of Basketball</span></div>
     <div class="hero-stat secondary"><span class="num" data-target="23">0</span><span class="lbl">Cities</span></div>
-    <div class="hero-stat secondary"><span class="num" data-target="33">0</span><span class="lbl">Pods</span></div>
   </div>
   <a href="bracket2026.html" class="hero-btn">View the 2026 Bracket Pool &rarr;</a>
   <div class="scroll-hint">Scroll to explore</div>

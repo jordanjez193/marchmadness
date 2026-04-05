@@ -963,7 +963,7 @@ document.querySelectorAll('.hero-stat .num').forEach(el=>cObserver.observe(el));
 function animateCounters(){
   document.querySelectorAll('.hero-stat .num').forEach(el=>{
     const t=+el.dataset.target;let c=0;const s=Math.max(1,Math.floor(t/40));
-    const iv=setInterval(()=>{c+=s;if(c>=t){c=t;clearInterval(iv)}el.textContent=c},30);
+    const iv=setInterval(()=>{c+=s;if(c>=t){c=t;clearInterval(iv)}el.textContent=c.toLocaleString()},30);
   });
 }
 

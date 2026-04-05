@@ -403,7 +403,7 @@ letter-spacing:0.1em;padding:1px 5px;border-radius:2px;color:white;text-transfor
 .chalk-tag.least{background:var(--red)}
 
 /* ===== STATS ===== */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
 .stat-panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:1.5rem}
 .stat-panel h4{font-size:0.7rem;letter-spacing:0.2em;color:var(--amber);margin-bottom:1rem}
 .stat-bar{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem}
@@ -1037,6 +1037,11 @@ window.addEventListener('scroll',()=>{
     card.className='year-card';
     card.innerHTML=`<div class="yc-year">${year}</div><div class="yc-city">${city}</div>`;
     card.addEventListener('click',()=>{
+      if(card.classList.contains('active')){
+        card.classList.remove('active');
+        detail.classList.remove('show');detail.innerHTML='';
+        return;
+      }
       document.querySelectorAll('.year-card').forEach(c=>c.classList.remove('active'));
       card.classList.add('active');showYearDetail(year,yGames);
     });

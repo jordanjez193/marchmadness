@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Bracket Pool - Jez Family March Madness</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏀</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#faf7f2;--bg2:#f0ebe3;--bg3:#e8e1d5;
+--panel:#ffffff;--panel-border:#e0d6c8;
+--text:#2c1810;--text2:#5a4636;--text3:#8a7a6a;
+--amber:#d4780a;--amber-light:#f5a623;--amber-bg:rgba(212,120,10,0.08);
+--orange:#e8843a;--red:#c0392b;--green:#2d8a4e;
+--court:#3b2314;
+--gold:#d4a017;--silver:#8a8a8a;--bronze:#a0522d;
+}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{font-family:'Source Serif 4',Georgia,serif;color:var(--text);background:var(--bg);overflow-x:hidden;line-height:1.6}
+h1,h2,h3,h4,h5,h6,.label{font-family:'Oswald',sans-serif;letter-spacing:0.04em;text-transform:uppercase}
+.mono{font-family:'JetBrains Mono',monospace}
+
+body::before{
+content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+background:
+  radial-gradient(ellipse at 50% 0%,rgba(212,120,10,0.04),transparent 60%),
+  repeating-linear-gradient(90deg,transparent,transparent 119px,rgba(212,120,10,0.015) 119px,rgba(212,120,10,0.015) 120px),
+  repeating-linear-gradient(0deg,transparent,transparent 119px,rgba(212,120,10,0.015) 119px,rgba(212,120,10,0.015) 120px);
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--amber);border-radius:3px}
+
+/* Nav */
+.nav{
+padding:0.75rem 2rem;display:flex;justify-content:center;gap:1.5rem;
+background:rgba(250,247,242,0.92);backdrop-filter:blur(12px);
+border-bottom:1px solid var(--panel-border);position:sticky;top:0;z-index:100;
+}
+.nav a{
+font-family:'Oswald';font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;
+color:var(--text3);text-decoration:none;transition:all 0.3s;
+}
+.nav a:hover,.nav a.active{color:var(--amber)}
+
+/* Hero */
+.hero{
+padding:5rem 2rem 4rem;text-align:center;position:relative;
+}
+.hero-badge{
+display:inline-block;padding:0.3rem 1.2rem;border:1px solid var(--amber);
+font-family:'Oswald';font-size:0.65rem;letter-spacing:0.3em;
+color:var(--amber);margin-bottom:1.5rem;text-transform:uppercase;
+}
+.hero h1{
+font-size:clamp(2rem,5vw,3.5rem);font-weight:700;color:var(--court);margin-bottom:0.3rem;
+}
+.hero h1 span{color:var(--amber)}
+.hero-sub{font-size:0.95rem;color:var(--text2);font-style:italic;margin-bottom:2.5rem}
+
+.winner-card{
+display:inline-flex;align-items:center;gap:1.5rem;
+background:var(--court);border-radius:10px;padding:1.2rem 2.5rem;
+box-shadow:0 6px 24px rgba(59,35,20,0.15);
+}
+.winner-card .wc-trophy{font-size:2.5rem}
+.winner-card .wc-info{text-align:left}
+.winner-card .wc-name{font-family:'Oswald';font-size:1.6rem;color:var(--amber-light);font-weight:600}
+.winner-card .wc-pts{font-family:'JetBrains Mono';font-size:0.8rem;color:rgba(255,255,255,0.6)}
+
+/* Sections */
+.section{padding:4rem 2rem;max-width:1200px;margin:0 auto}
+.section-head{text-align:center;margin-bottom:3rem}
+.section-head h2{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:600;color:var(--court);margin-bottom:0.4rem}
+.section-head h2 span{color:var(--amber)}
+.section-head p{color:var(--text3);font-size:0.9rem}
+.section-rule{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent);margin:0.8rem auto 0}
+.section-divider{
+position:relative;height:50px;max-width:1200px;margin:0 auto;
+display:flex;align-items:center;justify-content:center;
+}
+.section-divider::before{
+content:'';width:100px;height:50px;border:1.5px solid var(--bg3);
+border-bottom:none;border-radius:50px 50px 0 0;
+}
+.section-divider::after{
+content:'';position:absolute;top:50%;left:50%;width:8px;height:8px;
+background:var(--amber);border-radius:50%;transform:translate(-50%,-50%);
+}
+
+/* Leaderboard */
+.leaderboard{
+background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;
+overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.04);
+}
+.lb-table{width:100%;border-collapse:collapse;font-size:0.85rem}
+.lb-table thead{background:var(--court);color:rgba(255,255,255,0.8)}
+.lb-table th{
+font-family:'Oswald';font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;
+padding:0.8rem 0.6rem;font-weight:500;text-align:center;
+}
+.lb-table th:nth-child(2){text-align:left}
+.lb-table td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--bg2)}
+.lb-table td:nth-child(2){text-align:left;font-family:'Oswald';font-size:0.9rem;font-weight:500}
+.lb-table tbody tr:hover{background:var(--amber-bg)}
+.lb-table tbody tr:last-child td{border-bottom:none}
+.lb-table .total{font-family:'Oswald';font-weight:600;color:var(--amber);font-size:1rem}
+.lb-table .wins{font-family:'JetBrains Mono';font-size:0.75rem;color:var(--text2)}
+.lb-table .pts{font-family:'JetBrains Mono';font-size:0.75rem;color:var(--text3)}
+
+.rank-medal{
+display:inline-flex;align-items:center;justify-content:center;
+width:26px;height:26px;border-radius:50%;font-family:'Oswald';font-size:0.7rem;font-weight:600;
+}
+.rank-1{background:var(--gold);color:white}
+.rank-2{background:var(--silver);color:white}
+.rank-3{background:var(--bronze);color:white}
+.rank-n{color:var(--text3);font-family:'JetBrains Mono';font-size:0.75rem}
+
+.winner-pick{
+font-family:'Oswald';font-size:0.55rem;letter-spacing:0.1em;
+background:var(--amber-bg);color:var(--amber);padding:2px 6px;border-radius:3px;
+margin-left:4px;
+}
+.ai-tag{
+font-family:'Oswald';font-size:0.5rem;letter-spacing:0.1em;
+background:rgba(45,138,78,0.1);color:var(--green);padding:2px 6px;border-radius:3px;
+margin-left:4px;
+}
+
+/* Stacked bar chart */
+.chart-container{overflow-x:auto}
+.bar-chart{display:flex;flex-direction:column;gap:0.4rem;min-width:600px}
+.bar-row{display:flex;align-items:center;gap:0.5rem}
+.bar-label{
+font-family:'Oswald';font-size:0.75rem;color:var(--text2);
+min-width:100px;text-align:right;flex-shrink:0;
+}
+.bar-stack{display:flex;height:22px;flex:1;border-radius:3px;overflow:hidden}
+.bar-seg{height:100%;transition:width 1s ease}
+.bar-seg.r1{background:#e8843a}
+.bar-seg.r2{background:#d4780a}
+.bar-seg.r3{background:#b8650a}
+.bar-seg.r4{background:#3b2314}
+.bar-seg.r5{background:#d4a017}
+.bar-total{
+font-family:'JetBrains Mono';font-size:0.65rem;color:var(--text3);
+min-width:30px;margin-left:4px;
+}
+.chart-legend{
+display:flex;gap:1rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;
+}
+.chart-legend span{
+font-family:'Oswald';font-size:0.6rem;letter-spacing:0.1em;color:var(--text3);
+display:flex;align-items:center;gap:4px;
+}
+.chart-legend .swatch{width:12px;height:12px;border-radius:2px}
+
+/* Insights */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.insight-card{
+background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+padding:1.5rem;
+}
+.insight-card h4{
+font-size:0.65rem;letter-spacing:0.2em;color:var(--amber);margin-bottom:0.8rem;
+}
+.insight-card .ic-val{
+font-family:'Oswald';font-size:2rem;color:var(--court);line-height:1;margin-bottom:0.2rem;
+}
+.insight-card .ic-detail{font-size:0.8rem;color:var(--text3)}
+.insight-card .ic-sub{font-family:'JetBrains Mono';font-size:0.7rem;color:var(--amber);margin-top:0.4rem}
+
+/* Distribution */
+.dist-chart{
+display:flex;align-items:flex-end;justify-content:center;gap:3px;
+height:160px;padding:0 1rem;
+}
+.dist-bar{
+width:36px;border-radius:3px 3px 0 0;transition:height 1s ease;
+position:relative;cursor:default;
+}
+.dist-bar .db-label{
+position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);
+font-family:'JetBrains Mono';font-size:0.55rem;color:var(--text3);white-space:nowrap;
+}
+.dist-bar .db-count{
+position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+font-family:'Oswald';font-size:0.7rem;color:var(--amber);
+}
+
+/* Footer */
+.footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--bg3)}
+.footer p{font-family:'Oswald';font-size:0.65rem;letter-spacing:0.2em;color:var(--text3)}
+.footer a{color:var(--amber);text-decoration:none}
+
+@media(max-width:768px){
+  .nav{gap:0;padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{font-size:0.55rem;padding:0.75rem 0.7rem;white-space:nowrap;flex-shrink:0}
+  .section{padding:3rem 1rem}
+  .hero{padding:3rem 1rem 2.5rem}
+  .winner-card{flex-direction:column;gap:0.5rem;padding:1rem 1.5rem;text-align:center}
+  .winner-card .wc-info{text-align:center}
+  .lb-table{font-size:0.7rem}
+  .lb-table th,.lb-table td{padding:0.4rem 0.3rem}
+  .lb-table td:nth-child(2){font-size:0.75rem}
+  .bar-label{min-width:70px;font-size:0.6rem}
+  .insights-grid{grid-template-columns:1fr}
+  .rank-medal{width:22px;height:22px;font-size:0.6rem}
+  .dist-bar{width:24px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">Home</a>
+  <a href="index.html#map">Map</a>
+  <a href="index.html#timeline">Timeline</a>
+  <a href="index.html#stats">Stats</a>
+  <a href="bracket2026.html" class="active">2026 Bracket</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">March Madness 2026</div>
+  <h1>The <span>Bracket Pool</span></h1>
+  <p class="hero-sub">21 entries. 6 rounds. 1 champion.</p>
+  <div class="winner-card">
+    <div class="wc-trophy">🏆</div>
+    <div class="wc-info">
+      <div class="wc-name">Cory</div>
+      <div class="wc-pts">82 points &bull; Pool Champion</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="section" id="leaderboard">
+  <div class="section-head">
+    <h2>Final <span>Standings</span></h2>
+    <p>Complete leaderboard with round-by-round breakdown</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="leaderboard">
+    <table class="lb-table" id="lbTable"></table>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="section" id="breakdown">
+  <div class="section-head">
+    <h2>Points by <span>Round</span></h2>
+    <p>Where each player earned their points</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="chart-container">
+    <div class="bar-chart" id="barChart"></div>
+  </div>
+  <div class="chart-legend">
+    <span><div class="swatch" style="background:#e8843a"></div>Round 1</span>
+    <span><div class="swatch" style="background:#d4780a"></div>Round 2</span>
+    <span><div class="swatch" style="background:#b8650a"></div>Round 3</span>
+    <span><div class="swatch" style="background:#3b2314"></div>Round 4</span>
+    <span><div class="swatch" style="background:#d4a017"></div>Round 5</span>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="section" id="insights">
+  <div class="section-head">
+    <h2>Key <span>Insights</span></h2>
+    <p>Trends and standouts from this year's pool</p>
+    <div class="section-rule"></div>
+  </div>
+  <div class="insights-grid" id="insightsGrid"></div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="section" id="distribution">
+  <div class="section-head">
+    <h2>Score <span>Distribution</span></h2>
+    <p>How the field spread out across the scoring range</p>
+    <div class="section-rule"></div>
+  </div>
+  <div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:2rem 1rem 2.5rem">
+    <div class="dist-chart" id="distChart"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p><a href="index.html">&larr; Back to the Jez Family March Madness Tradition</a></p>
+</footer>
+
+<script>
+const players=[
+{rank:1,name:"Cory",w:[25,11,6,3,1],p:[25,22,18,12,5],total:82,pick:"Michigan"},
+{rank:2,name:"Cindy CGPT1",w:[25,12,5,2,0],p:[25,24,15,8,0],total:72,pick:"",ai:true},
+{rank:3,name:"Ollie K",w:[24,12,5,2,0],p:[24,24,15,8,0],total:71,pick:""},
+{rank:4,name:"PJ",w:[27,13,3,1,1],p:[27,26,9,4,5],total:71,pick:"Michigan"},
+{rank:5,name:"Karen",w:[25,11,5,2,0],p:[25,22,15,8,0],total:70,pick:""},
+{rank:6,name:"The Commish",w:[25,13,3,1,1],p:[25,26,9,4,5],total:69,pick:"Michigan"},
+{rank:7,name:"Hannah C",w:[24,12,3,2,0],p:[24,24,9,8,0],total:65,pick:""},
+{rank:8,name:"Al",w:[27,10,3,1,1],p:[27,20,9,4,5],total:65,pick:""},
+{rank:9,name:"Val",w:[24,12,4,1,0],p:[24,24,12,4,0],total:64,pick:""},
+{rank:10,name:"Bill C",w:[27,10,3,2,0],p:[27,20,9,8,0],total:64,pick:""},
+{rank:11,name:"Joan",w:[27,10,4,1,0],p:[27,20,12,4,0],total:63,pick:""},
+{rank:12,name:"Jordan2",w:[25,8,3,2,1],p:[25,16,9,8,5],total:63,pick:""},
+{rank:13,name:"Rudy3",w:[24,10,3,1,1],p:[24,20,9,4,5],total:62,pick:"UConn"},
+{rank:14,name:"Jordan1",w:[22,11,3,2,0],p:[22,22,9,8,0],total:61,pick:""},
+{rank:15,name:"Valbert",w:[24,9,2,2,1],p:[24,18,6,8,5],total:61,pick:""},
+{rank:16,name:"Kellie",w:[27,11,2,1,0],p:[27,22,6,4,0],total:59,pick:""},
+{rank:17,name:"Cindy CGPT2",w:[24,12,3,0,0],p:[24,24,9,0,0],total:57,pick:"",ai:true},
+{rank:18,name:"Dylan",w:[26,10,1,2,0],p:[26,20,3,8,0],total:57,pick:""},
+{rank:19,name:"Nolan",w:[20,9,2,0,0],p:[20,18,6,0,0],total:44,pick:""},
+{rank:20,name:"Michael",w:[23,7,2,0,0],p:[23,14,6,0,0],total:43,pick:""},
+{rank:21,name:"Al Religious",w:[22,8,1,0,0],p:[22,16,3,0,0],total:41,pick:""},
+];
+
+const maxTotal=players[0].total;
+
+// ===== LEADERBOARD =====
+(function(){
+  const table=document.getElementById('lbTable');
+  let html=`<thead><tr>
+    <th>#</th><th>Player</th>
+    <th colspan="5" style="border-bottom:1px solid rgba(255,255,255,0.1)">Wins</th>
+    <th colspan="5" style="border-bottom:1px solid rgba(255,255,255,0.1)">Points</th>
+    <th>Total</th>
+  </tr><tr>
+    <th></th><th></th>
+    <th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>R5</th>
+    <th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>R5</th>
+    <th></th>
+  </tr></thead><tbody>`;
+
+  players.forEach(p=>{
+    const medalClass=p.rank<=3?`rank-${p.rank}`:'rank-n';
+    const rankHTML=p.rank<=3?`<span class="rank-medal ${medalClass}">${p.rank}</span>`:`<span class="rank-n">${p.rank}</span>`;
+    const nameExtra=(p.pick?`<span class="winner-pick">${p.pick}</span>`:'')+(p.ai?`<span class="ai-tag">AI</span>`:'');
+    html+=`<tr>
+      <td>${rankHTML}</td>
+      <td>${p.name}${nameExtra}</td>
+      ${p.w.map(v=>`<td class="wins">${v}</td>`).join('')}
+      ${p.p.map(v=>`<td class="pts">${v}</td>`).join('')}
+      <td class="total">${p.total}</td>
+    </tr>`;
+  });
+  html+=`</tbody>`;
+  table.innerHTML=html;
+})();
+
+// ===== BAR CHART =====
+(function(){
+  const chart=document.getElementById('barChart');
+  const colors=['r1','r2','r3','r4','r5'];
+  players.forEach(p=>{
+    const row=document.createElement('div');row.className='bar-row';
+    let segs=p.p.map((v,i)=>`<div class="bar-seg ${colors[i]}" style="width:${v/maxTotal*100}%" title="R${i+1}: ${v}pts"></div>`).join('');
+    row.innerHTML=`<div class="bar-label">${p.name}</div><div class="bar-stack">${segs}</div><div class="bar-total mono">${p.total}</div>`;
+    chart.appendChild(row);
+  });
+})();
+
+// ===== INSIGHTS =====
+(function(){
+  const grid=document.getElementById('insightsGrid');
+
+  // Best R1
+  const bestR1=Math.max(...players.map(p=>p.w[0]));
+  const bestR1Names=players.filter(p=>p.w[0]===bestR1).map(p=>p.name);
+
+  // Best R2
+  const bestR2=Math.max(...players.map(p=>p.w[1]));
+  const bestR2Names=players.filter(p=>p.w[1]===bestR2).map(p=>p.name);
+
+  // Late round king (R3+R4+R5 points)
+  const lateRound=players.map(p=>({name:p.name,late:p.p[2]+p.p[3]+p.p[4]})).sort((a,b)=>b.late-a.late);
+
+  // AI vs Human
+  const aiPlayers=players.filter(p=>p.ai);
+  const humanPlayers=players.filter(p=>!p.ai);
+  const aiAvg=Math.round(aiPlayers.reduce((s,p)=>s+p.total,0)/aiPlayers.length*10)/10;
+  const humanAvg=Math.round(humanPlayers.reduce((s,p)=>s+p.total,0)/humanPlayers.length*10)/10;
+  const aiRank=Math.round((aiPlayers.reduce((s,p)=>s+p.rank,0)/aiPlayers.length)*10)/10;
+
+  // Winner picks
+  const picks={};
+  players.forEach(p=>{if(p.pick)picks[p.pick]=(picks[p.pick]||0)+1});
+  const pickEntries=Object.entries(picks).sort((a,b)=>b[1]-a[1]);
+
+  // Avg score
+  const avgScore=Math.round(players.reduce((s,p)=>s+p.total,0)/players.length*10)/10;
+
+  // Margin of victory
+  const margin=players[0].total-players[1].total;
+
+  // Closest race
+  const tiedPairs=[];
+  for(let i=0;i<players.length-1;i++){
+    if(players[i].total===players[i+1].total)tiedPairs.push(`${players[i].name} & ${players[i+1].name} (${players[i].total})`);
+  }
+
+  let html='';
+
+  html+=`<div class="insight-card">
+    <h4>Pool Champion</h4>
+    <div class="ic-val">Cory</div>
+    <div class="ic-detail">Won by ${margin} points over the field</div>
+    <div class="ic-sub">82 pts &bull; 25-11-6-3-1 record</div>
+  </div>`;
+
+  html+=`<div class="insight-card">
+    <h4>Best First Round</h4>
+    <div class="ic-val">${bestR1}/32</div>
+    <div class="ic-detail">${bestR1Names.join(', ')}</div>
+    <div class="ic-sub">${bestR1Names.length} player${bestR1Names.length>1?'s':''} tied</div>
+  </div>`;
+
+  html+=`<div class="insight-card">
+    <h4>Best Second Round</h4>
+    <div class="ic-val">${bestR2}/16</div>
+    <div class="ic-detail">${bestR2Names.join(', ')}</div>
+    <div class="ic-sub">Top R2 pickers</div>
+  </div>`;
+
+  html+=`<div class="insight-card">
+    <h4>Late-Round King</h4>
+    <div class="ic-val">${lateRound[0].late} pts</div>
+    <div class="ic-detail">${lateRound[0].name} (Rounds 3-5)</div>
+    <div class="ic-sub">Runner-up: ${lateRound[1].name} (${lateRound[1].late} pts)</div>
+  </div>`;
+
+  html+=`<div class="insight-card">
+    <h4>AI vs Humans</h4>
+    <div class="ic-val">${humanAvg} &ndash; ${aiAvg}</div>
+    <div class="ic-detail">Human avg vs ChatGPT avg</div>
+    <div class="ic-sub">AI avg rank: ${aiRank} of 21</div>
+  </div>`;
+
+  html+=`<div class="insight-card">
+    <h4>Champion Picks</h4>
+    <div class="ic-val">${pickEntries.map(([t,c])=>`${t} (${c})`).join(', ')}</div>
+    <div class="ic-detail">${players.filter(p=>p.pick).length} of 21 players had recorded picks</div>
+    <div class="ic-sub">Field average: ${avgScore} pts</div>
+  </div>`;
+
+  if(tiedPairs.length){
+    html+=`<div class="insight-card">
+      <h4>Tiebreakers</h4>
+      <div class="ic-val">${tiedPairs.length} tied pair${tiedPairs.length>1?'s':''}</div>
+      <div class="ic-detail">${tiedPairs.join(' / ')}</div>
+      <div class="ic-sub">Settled by tiebreaker rules</div>
+    </div>`;
+  }
+
+  html+=`<div class="insight-card">
+    <h4>Scoring Spread</h4>
+    <div class="ic-val">${players[0].total} &ndash; ${players[players.length-1].total}</div>
+    <div class="ic-detail">${players[0].total - players[players.length-1].total} point gap, top to bottom</div>
+    <div class="ic-sub">Median: ${players[Math.floor(players.length/2)].total} pts</div>
+  </div>`;
+
+  grid.innerHTML=html;
+})();
+
+// ===== DISTRIBUTION =====
+(function(){
+  const chart=document.getElementById('distChart');
+  // Bucket by 5-point ranges
+  const buckets={};
+  const min=Math.floor(players[players.length-1].total/5)*5;
+  const max=Math.ceil(players[0].total/5)*5;
+  for(let i=min;i<=max;i+=5)buckets[i]=0;
+  players.forEach(p=>{
+    const b=Math.floor(p.total/5)*5;
+    buckets[b]++;
+  });
+  const maxCount=Math.max(...Object.values(buckets));
+  Object.entries(buckets).forEach(([range,count])=>{
+    const bar=document.createElement('div');
+    bar.className='dist-bar';
+    const h=count>0?Math.max(20,count/maxCount*140):0;
+    bar.style.height=h+'px';
+    bar.style.background=count>0?'var(--amber)':'var(--bg3)';
+    bar.innerHTML=`<span class="db-count">${count||''}</span><span class="db-label">${range}-${+range+4}</span>`;
+    chart.appendChild(bar);
+  });
+})();
+
+// Fade-in
+const fObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';fObs.unobserve(e.target)}})},{threshold:0.1});
+document.querySelectorAll('.section-head,.insight-card,.leaderboard').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(20px)';
+  el.style.transition='opacity 0.6s ease, transform 0.6s ease';
+  fObs.observe(el);
+});
+</script>
+</body>
+</html>

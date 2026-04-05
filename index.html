@@ -116,6 +116,15 @@ background:var(--amber);margin-right:6px;vertical-align:middle;
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
+.hero-btn{
+display:inline-block;margin-top:2rem;padding:0.7rem 2rem;
+font-family:'Oswald';font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;
+text-decoration:none;color:white;background:var(--amber);border-radius:5px;
+transition:all 0.3s;box-shadow:0 3px 12px rgba(212,120,10,0.2);
+opacity:0;animation:fadeUp 0.8s 1s forwards;
+}
+.hero-btn:hover{background:var(--court);box-shadow:0 4px 16px rgba(59,35,20,0.2);transform:translateY(-2px)}
+
 .scroll-hint{
 position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
 font-family:'Oswald';font-size:0.6rem;letter-spacing:0.3em;color:var(--text3);
@@ -461,6 +470,7 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
   <a href="#facts">Facts</a>
   <a href="#stats">Stats</a>
   <a href="#eras">Eras</a>
+  <a href="bracket2026.html" style="color:var(--amber)">2026 Bracket</a>
 </nav>
 
 <section class="hero">
@@ -473,6 +483,7 @@ opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;
     <div class="hero-stat secondary"><span class="num" data-target="23">0</span><span class="lbl">Cities</span></div>
     <div class="hero-stat secondary"><span class="num" data-target="33">0</span><span class="lbl">Pods</span></div>
   </div>
+  <a href="bracket2026.html" class="hero-btn">View the 2026 Bracket Pool &rarr;</a>
   <div class="scroll-hint">Scroll to explore</div>
 </section>
 
